@@ -10,6 +10,7 @@ include_directories(include ${KINECTV2_DECODERS_INCLUDE_DIRS})
 set(kinectv2_decoders_src run_decoders.cpp
                         src/libfreenect2_processor.cpp
                         src/kde_processor.cpp
+                        src/device_parameters.cpp
                         src/read_file_handler.cpp)
 
 add_executable(kinectv2_decoders ${kinectv2_decoders_src})
