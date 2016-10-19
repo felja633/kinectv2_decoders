@@ -29,6 +29,8 @@
 
 
 #include <fstream>
+#include <iostream>
+#include <algorithm>
 #include "processors.h"
 #include "libfreenect2_data_structures.h"
 #include <limits>
@@ -39,9 +41,9 @@
 #include <cmath>
 #include <limits>
 
-static float constant k_list[30] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-static float constant n_list[30] = {0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f, 4.0f, 4.0f, 3.0f, 4.0f, 4.0f, 5.0f, 5.0f, 5.0f, 6.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 8.0f, 8.0f, 7.0f, 8.0f, 9.0f, 9.0f};
-static float constant m_list[30] = {0.0f, 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f, 4.0f, 4.0f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 7.0f, 7.0f, 8.0f, 8.0f, 9.0f, 9.0f, 10.0f, 10.0f, 11.0f, 11.0f, 12.0f, 12.0f, 13.0f, 13.0f, 14.0f};
+static float k_list[30] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+static float n_list[30] = {0.0f, 0.0f, 1.0f, 1.0f, 2.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f, 4.0f, 4.0f, 3.0f, 4.0f, 4.0f, 5.0f, 5.0f, 5.0f, 6.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 8.0f, 8.0f, 7.0f, 8.0f, 9.0f, 9.0f};
+static float m_list[30] = {0.0f, 1.0f, 1.0f, 2.0f, 2.0f, 3.0f, 3.0f, 4.0f, 4.0f, 5.0f, 5.0f, 6.0f, 6.0f, 7.0f, 7.0f, 7.0f, 7.0f, 8.0f, 8.0f, 9.0f, 9.0f, 10.0f, 10.0f, 11.0f, 11.0f, 12.0f, 12.0f, 13.0f, 13.0f, 14.0f};
 
 
 class CpuKdeDepthPacketProcessorImpl
@@ -70,7 +72,7 @@ public:
 
     enable_bilateral_filter = true;
     enable_edge_filter = true;
-    createGaussianKernel(&gauss_filt_kernel, params.filt_size);
+    createGaussianKernel(&gauss_filt_kernel, params.kde_neigborhood_size);
     flip_ptables = true;
   }
 
@@ -451,7 +453,7 @@ public:
         //gamma_1 = [1.214266794,-0.00581082634,-3.863119924];   root = 4.084834279
         //gamma_2 = [0.6101457464,-0.00113679233,-2.84614442];   root = 6.379474529
 
-        float alpha_max = 0.5f*M_PI_F;
+        float alpha_max = 0.5f*M_PI;
 
         float q0 = ir0 > 5.244404f ? 0.7919451669f*ir0-0.002363097609f*ir0*ir0-3.088285897f : 1.0f/alpha_max;
         float q1 = ir1 > 4.084835 ? 1.214266794f*ir1-0.00581082634f*ir1*ir1-3.863119924f : 1.0f/alpha_max;
@@ -493,9 +495,9 @@ public:
         q1*=q1;
         q2*=q2;
 
-        float alpha0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir0 > 5.64173671f/4.0f ? 5.64173671f*0.5f*M_PI_F/ir0 : 2.0f*M_PI_F;
-        float alpha1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir1 > 4.31705182f/4.0f ?  4.31705182f*0.5f*M_PI_F/ir1 : 2.0f*M_PI_F;
-        float alpha2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir2 > 6.84453530f/4.0f ? 6.84453530f*0.5f*M_PI_F/ir2 : 2.0f*M_PI_F;
+        float alpha0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir0 > 5.64173671f/4.0f ? 5.64173671f*0.5f*M_PI/ir0 : 2.0f*M_PI;
+        float alpha1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir1 > 4.31705182f/4.0f ?  4.31705182f*0.5f*M_PI/ir1 : 2.0f*M_PI;
+        float alpha2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir2 > 6.84453530f/4.0f ? 6.84453530f*0.5f*M_PI/ir2 : 2.0f*M_PI;
 
         alpha0 = alpha0 < 0.001f ? 0.001f: alpha0;
         alpha1 = alpha1 < 0.001f ? 0.001f: alpha1;
@@ -507,7 +509,7 @@ public:
 
     }
 
-  void processPixelStage2_phase(int x, int y, float *m0, float *m1, float *m2, float *ir_out, float *phase0, float *phase0, float* conf0, float* conf1)
+  void processPixelStage2_phase(int x, int y, float *m0, float *m1, float *m2, float *ir_out, float *phase0, float *phase1, float* conf0, float* conf1)
   {
     //// 10th measurement
     //float m9 = 1; // decodePixelMeasurement(data, 9, x, y);
@@ -526,7 +528,7 @@ public:
     m2[1] = std::isnan(m2[1]) ? 0.0f : m2[1];
     float ir_sum = m0[1] + m1[1] + m2[1];
 
-    float phase;
+    float phase_likelihood;
     // if(DISABLE_DISAMBIGUATION)
     float phase_first = 0.0;
 	float phase_second = 0.0;
@@ -534,11 +536,9 @@ public:
 	float J_1, J_2, unwrapping_likelihood1, unwrapping_likelihood2;
 
 	//scale with least common multiples of modulation frequencies
-	float3 t = phase / (2.0f * M_PI_F) * (float3)(3.0f, 15.0f, 2.0f);
-
-	float t0 = m0[0] / (2.0f * M_PI_F) * 3.0f;
-	float t1 = m1[0] / (2.0f * M_PI_F) * 15.0f;;
-	float t2 = m2[0] / (2.0f * M_PI_F) * 2.0f;;
+	float t0 = m0[0] / (2.0f * M_PI) * 3.0f;
+	float t1 = m1[0] / (2.0f * M_PI) * 15.0f;;
+	float t2 = m2[0] / (2.0f * M_PI) * 2.0f;;
 
 	//rank and extract two most likely phase hypothises
 	phaseUnWrapper(t0, t1, t2, &phase_first, &phase_second, &J_1, &J_2);
@@ -546,9 +546,9 @@ public:
 	{
 		//calculate phase likelihood from amplitude
 		float var0,var1,var2;
-		calculatePhaseUnwrappingVar(ir0, ir1, ir2, &var0, &var1, &var2);
-		phase_likelihood = exp(-(var0+var1+var2)/(2.0f*PHASE_CONFIDENCE_SCALE));
-		phase_likelihood = select(phase_likelihood, 0.0f, isnan(phase_likelihood));
+		calculatePhaseUnwrappingVar(m0[1], m1[1], m2[1], &var0, &var1, &var2);
+		phase_likelihood = exp(-(var0+var1+var2)/(2.0f*params.phase_confidence_scale));
+		phase_likelihood = isnan(phase_likelihood) ? 0.0f: phase_likelihood;
 	}
 	else
 	{
@@ -556,16 +556,12 @@ public:
 	}
 
 	//merge phase likelihood with phase likelihood
-	unwrapping_likelihood1 = phase_likelihood*exp(-J_1/(2*UNWRAPPING_LIKELIHOOD_SCALE));
-	unwrapping_likelihood2 = phase_likelihood*exp(-J_2/(2*UNWRAPPING_LIKELIHOOD_SCALE));
+	unwrapping_likelihood1 = phase_likelihood*exp(-J_1/(2*params.unwrapping_likelihood_scale));
+	unwrapping_likelihood2 = phase_likelihood*exp(-J_2/(2*params.unwrapping_likelihood_scale));
 
 	//suppress confidence if phase is beyond allowed range
 	unwrapping_likelihood1 = phase_first > params.max_depth*9.0f/18750.0f ? 0.0f: unwrapping_likelihood1;
 	unwrapping_likelihood2 = phase_second > params.max_depth*9.0f/18750.0f ? 0.0f: unwrapping_likelihood2;
-    if(ir_sum_out != 0)
-    {
-      *ir_sum_out = ir_sum;
-    }
 
     // ir
     //*ir_out = std::min((m1[2]) * ab_output_multiplier, 65535.0f);
@@ -581,7 +577,7 @@ public:
     *conf1 = unwrapping_likelihood2;
   }
 
-  void filter_kde(const unsigned int i, float* phase1, float* phase2, float* conf1, float* conf2, const float* gauss_filt_array, const float* z_table, const float* x_table, float* depth, float* max_val_arr)
+  void filter_kde(const unsigned int i, float* phase1, float* phase2, float* conf1, float* conf2, const float* gauss_filt_array, float* depth_out, float* max_val_arr)
   {
 	float kde_val_1, kde_val_2;
 
@@ -592,10 +588,10 @@ public:
     float sum_1, sum_2;
 
 	//initialize neighborhood boundaries
-	int from_x = (loadX > params.kde_neighborhood_size ? -params.kde_neighborhood_size : -loadX+1);
-	int from_y = (loadY > params.kde_neighborhood_size ? -params.kde_neighborhood_size : -loadY+1);
-	int to_x = (loadX < 511-params.kde_neighborhood_size-1 ? params.kde_neighborhood_size: 511-loadX-1);
-	int to_y = (loadY < 423-params.kde_neighborhood_size ? params.kde_neighborhood_size: 423-loadY);
+	int from_x = (loadX > params.kde_neigborhood_size ? -params.kde_neigborhood_size : -loadX+1);
+	int from_y = (loadY > params.kde_neigborhood_size ? -params.kde_neigborhood_size : -loadY+1);
+	int to_x = (loadX < 511-params.kde_neigborhood_size-1 ? params.kde_neigborhood_size: 511-loadX-1);
+	int to_y = (loadY < 423-params.kde_neigborhood_size  ? params.kde_neigborhood_size: 423-loadY);
 
     kde_val_1 = 0.0f;
 	kde_val_2 = 0.0f;
@@ -613,8 +609,8 @@ public:
 		float phase_2_local;
 		float conf1_local;
 		float conf2_local;
-        float4 phase_conf_local;
-		uint ind;
+        //float4 phase_conf_local;
+		unsigned int ind;
 
 		float diff11, diff21, diff12, diff22;
 
@@ -630,7 +626,7 @@ public:
 				phase_1_local = phase1[ind];
 				phase_2_local = phase2[ind];
 
-				gauss = gauss_filt_array[k+params.kde_neighborhood_size]*gauss_filt_array[l+params.kde_neighborhood_size];
+				gauss = gauss_filt_array[k+params.kde_neigborhood_size]*gauss_filt_array[l+params.kde_neigborhood_size];
 				sum_gauss += gauss*(conf1_local+conf2_local);
 				diff11 = phase_1_local-phase_local1;
 				diff21 = phase_2_local-phase_local1;
@@ -646,17 +642,17 @@ public:
 	//select hypothesis
 	int val_ind = kde_val_2 <= kde_val_1 ? 1: 0;
 
-	float phase_final = val_ind ? phase_local.x: phase_local.y;
+	float phase_final = val_ind ? phase_local1: phase_local2;
 	float max_val = val_ind ? kde_val_1: kde_val_2;
 	unsigned int x = i % 512;
 	unsigned int y = i / 512;
     float zmultiplier = z_table.at(y, x);
     float xmultiplier = x_table.at(y, x);
 
-    phase = 0 < phase ? phase + params.phase_offset : phase;
+    phase_final = 0 < phase_final ? phase_final + params.phase_offset : phase_final;
 
-    float depth_linear = zmultiplier * phase;
-    float max_depth = phase * params.unambigious_dist * 2;
+    float depth_linear = zmultiplier * phase_final;
+    float max_depth = phase_final * params.unambigious_dist * 2;
 
     bool cond1 = /*(modeMask & 32) != 0*/ true && 0 < depth_linear && 0 < max_depth;
 
@@ -669,7 +665,7 @@ public:
 
     // depth
     depth_out[i] = depth;
-    max_val_vec[i] = max_val;
+    max_val_arr[i] = max_val;
   }
 };
 
@@ -744,7 +740,7 @@ void CpuKdeDepthPacketProcessor::loadLookupTable(const short *lut)
  * Process a packet.
  * @param packet Packet to process.
  */
-void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet, float* depth_buffer, float* ir_buffer)
+void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffer, float** ir_buffer)
 {
   impl_->newIrFrame();
   impl_->newDepthFrame();
@@ -760,7 +756,7 @@ void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet, float* depth
   for(int y = 0; y < 424; ++y)
     for(int x = 0; x < 512; ++x, m_ptr += 9)
     {
-      impl_->processPixelStage1(x, y, packet.buffer, m_ptr + 0, m_ptr + 3, m_ptr + 6);
+      impl_->processPixelStage1(x, y, buffer, m_ptr + 0, m_ptr + 3, m_ptr + 6);
     }
 
   // bilateral filtering
@@ -787,7 +783,7 @@ void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet, float* depth
   float* conf = new float[512*424*2];
   Mat<float> out_ir(424, 512, impl_->ir_frame), out_depth(424, 512, impl_->depth_frame);
   for(int y = 0; y < 424; ++y)
-      for(int x = 0; x < 512; ++x, ++m_max_edge_test_ptr)
+      for(int x = 0; x < 512; ++x)
       {
   	impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->ir_frame, phase + 0, phase+512*424, conf + 0, conf + 512*424);
       }
@@ -795,12 +791,12 @@ void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet, float* depth
   float* final_conf = new float[512*424];
   for(unsigned int i = 0; i < 512*424; ++i)
   {
-     impl_->filter_kde(i, phase + 0, phase + 512*424, conf + 0, conf + 512*424, impl_->gauss_filt_kernel, impl_->z_table, impl_->x_table, impl_->depth_frame, final_conf);
+     impl_->filter_kde(i, phase + 0, phase + 512*424, conf + 0, conf + 512*424, impl_->gauss_filt_kernel, impl_->depth_frame, final_conf);
   }
   //impl_->stopTiming(LOG_INFO);
 
-    depth_buffer = impl_->depth_frame;
-    ir_buffer = imple_->ir_frame;
+    *depth_buffer = impl_->depth_frame;
+    *ir_buffer = impl_->ir_frame;
     delete[] phase;
     delete[] conf;
 }

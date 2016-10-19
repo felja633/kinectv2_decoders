@@ -9,20 +9,19 @@ class CpuDepthPacketProcessor
 public:
   CpuDepthPacketProcessor();
   ~CpuDepthPacketProcessor();
-  void setConfiguration(const libfreenect2::DepthPacketProcessor::Config &config);
+  //void setConfiguration(const );
 
   void loadP0TablesFromCommandResponse(unsigned char* buffer, size_t buffer_length);
 
   void loadXZTables(const float *xtable, const float *ztable);
   void loadLookupTable(const short *lut);
 
-  const char *name() { return "CPU"; }
-  void process(const DepthPacket &packet);
+  void process(unsigned char* buffer, float** depth_buffer, float** ir_buffer);
 private:
   CpuDepthPacketProcessorImpl *impl_;
 };
 
-class CpuDepthPacketProcessorImpl;
+class CpuKdeDepthPacketProcessorImpl;
 
 /** Depth packet processor using the CPU. */
 class CpuKdeDepthPacketProcessor
@@ -30,15 +29,14 @@ class CpuKdeDepthPacketProcessor
 public:
   CpuKdeDepthPacketProcessor();
   ~CpuKdeDepthPacketProcessor();
-  void setConfiguration(const libfreenect2::DepthPacketProcessor::Config &config);
+  //void setConfiguration(const libfreenect2::DepthPacketProcessor::Config &config);
 
   void loadP0TablesFromCommandResponse(unsigned char* buffer, size_t buffer_length);
 
   void loadXZTables(const float *xtable, const float *ztable);
   void loadLookupTable(const short *lut);
 
-  const char *name() { return "CPU"; }
-  void process(const DepthPacket &packet);
+  void process(unsigned char* buffer, float** depth_buffer, float** ir_buffer);
 private:
   CpuKdeDepthPacketProcessorImpl *impl_;
 };

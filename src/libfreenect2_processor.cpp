@@ -29,6 +29,9 @@
 
 
 #include <fstream>
+#include <iostream>
+#include <algorithm>
+
 #include "processors.h"
 #include "libfreenect2_data_structures.h"
 #include <limits>
@@ -604,7 +607,7 @@ void CpuDepthPacketProcessor::loadP0TablesFromCommandResponse(unsigned char* buf
 
   if(buffer_length < sizeof(P0TablesResponse))
   {
-    LOG_ERROR << "P0Table response too short!";
+    std::cerr << "P0Table response too short!\n";
     return;
   }
 
@@ -645,7 +648,7 @@ void CpuDepthPacketProcessor::loadLookupTable(const short *lut)
  * Process a packet.
  * @param packet Packet to process.
  */
-void CpuDepthPacketProcessor::process(const DepthPacket &packet, float* depth_buffer, float* ir_buffer)
+void CpuDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffer, float** ir_buffer)
 {
    impl_->newIrFrame();
     impl_->newDepthFrame();
@@ -667,7 +670,7 @@ void CpuDepthPacketProcessor::process(const DepthPacket &packet, float* depth_bu
   for(int y = 0; y < 424; ++y)
     for(int x = 0; x < 512; ++x, m_ptr += 9)
     {
-      impl_->processPixelStage1(x, y, packet.buffer, m_ptr + 0, m_ptr + 3, m_ptr + 6);
+      impl_->processPixelStage1(x, y, buffer, m_ptr + 0, m_ptr + 3, m_ptr + 6);
     }
 
   // bilateral filtering
@@ -729,8 +732,8 @@ void CpuDepthPacketProcessor::process(const DepthPacket &packet, float* depth_bu
   }
 
   //impl_->stopTiming(LOG_INFO);
-    depth_buffer = impl_->depth_frame;
-    ir_buffer = imple_->ir_frame;
+    *depth_buffer = impl_->depth_frame;
+    *ir_buffer = impl_->ir_frame;
   
 
 }

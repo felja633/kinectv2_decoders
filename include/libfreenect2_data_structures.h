@@ -1,5 +1,10 @@
+#include <stdint.h>
+
 #ifndef LIBFREENECT2_DATA_STRUCTURES_H
 #define LIBFREENECT2_DATA_STRUCTURES_H
+
+#define TABLE_SIZE 512*424
+#define LUT_SIZE 2048
 
 /**
  * Vector class.
@@ -264,8 +269,8 @@ inline int bfi(int width, int offset, int src2, int src3)
     float min_depth;
     float max_depth;
 
-    DepthPacketProcessor::Parameters::Parameters()
-{
+  Parameters()
+  {
   ab_multiplier = 0.6666667f;
   ab_multiplier_per_frq[0] = 1.322581f;
   ab_multiplier_per_frq[1] = 1.0f;
@@ -351,3 +356,4 @@ struct P0TablesResponse
   uint8_t  unknownD[];
 };
 
+#endif
