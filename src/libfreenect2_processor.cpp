@@ -54,14 +54,14 @@ public:
   bool enable_bilateral_filter, enable_edge_filter;
   Parameters params;
 
-  Frame *ir_frame, *depth_frame;
+  float *ir_frame, *depth_frame;
 
   bool flip_ptables;
 
   CpuDepthPacketProcessorImpl()
   {
-    newIrFrame();
-    newDepthFrame();
+    //newIrFrame();
+    //newDepthFrame();
 
     enable_bilateral_filter = true;
     enable_edge_filter = true;
@@ -72,8 +72,8 @@ public:
   /** Allocate a new IR frame. */
   void newIrFrame()
   {
-    ir_frame = new Frame(512, 424, 4);
-    ir_frame->format = Frame::Float;
+    ir_frame = new float[512*424];
+    
     //ir_frame = new Frame(512, 424, 12);
   }
 
@@ -86,9 +86,9 @@ public:
   /** Allocate a new depth frame. */
   void newDepthFrame()
   {
-    depth_frame = new Frame(512, 424, 4);
-    depth_frame->format = Frame::Float;
+    depth_frame = new float[512*424];
   }
+
 
   int32_t decodePixelMeasurement(unsigned char* data, int sub, int x, int y)
   {
@@ -645,16 +645,16 @@ void CpuDepthPacketProcessor::loadLookupTable(const short *lut)
  * Process a packet.
  * @param packet Packet to process.
  */
-void CpuDepthPacketProcessor::process(const DepthPacket &packet)
+void CpuDepthPacketProcessor::process(const DepthPacket &packet, float* depth_buffer, float* ir_buffer)
 {
-  if(listener_ == 0) return;
-
+   impl_->newIrFrame();
+    impl_->newDepthFrame();
   //impl_->startTiming();
 
-  impl_->ir_frame->timestamp = packet.timestamp;
+  /*impl_->ir_frame->timestamp = packet.timestamp;
   impl_->depth_frame->timestamp = packet.timestamp;
   impl_->ir_frame->sequence = packet.sequence;
-  impl_->depth_frame->sequence = packet.sequence;
+  impl_->depth_frame->sequence = packet.sequence;*/
 
   Mat<Vec<float, 9> >
       m(424, 512),
@@ -691,7 +691,7 @@ void CpuDepthPacketProcessor::process(const DepthPacket &packet)
     m_ptr = (m.ptr(0, 0)->val);
   }
 
-  Mat<float> out_ir(424, 512, impl_->ir_frame->data), out_depth(424, 512, impl_->depth_frame->data);
+  Mat<float> out_ir(424, 512, impl_->ir_frame), out_depth(424, 512, impl_->depth_frame);
 
   if(impl_->enable_edge_filter)
   {
@@ -729,17 +729,8 @@ void CpuDepthPacketProcessor::process(const DepthPacket &packet)
   }
 
   //impl_->stopTiming(LOG_INFO);
-
-  if (listener_ != 0 ){
-    if(listener_->onNewFrame(Frame::Ir, impl_->ir_frame))
-    {
-      impl_->newIrFrame();
-    }
-
-    if(listener_->onNewFrame(Frame::Depth, impl_->depth_frame))
-    {
-      impl_->newDepthFrame();
-    }
-  }
+    depth_buffer = impl_->depth_frame;
+    ir_buffer = imple_->ir_frame;
+  
 
 }

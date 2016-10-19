@@ -59,26 +59,26 @@ public:
   bool enable_bilateral_filter, enable_edge_filter;
   Parameters params;
 
-  Frame *ir_frame, *depth_frame;
-
+  float *ir_frame, *depth_frame;
+  float *gauss_filt_kernel;
   bool flip_ptables;
 
   CpuKdeDepthPacketProcessorImpl()
   {
-    newIrFrame();
-    newDepthFrame();
+    //newIrFrame();
+    //newDepthFrame();
 
     enable_bilateral_filter = true;
     enable_edge_filter = true;
-
+    createGaussianKernel(&gauss_filt_kernel, params.filt_size);
     flip_ptables = true;
   }
 
   /** Allocate a new IR frame. */
   void newIrFrame()
   {
-    ir_frame = new Frame(512, 424, 4);
-    ir_frame->format = Frame::Float;
+    ir_frame = new float[512*424];
+    
     //ir_frame = new Frame(512, 424, 12);
   }
 
@@ -91,8 +91,18 @@ public:
   /** Allocate a new depth frame. */
   void newDepthFrame()
   {
-    depth_frame = new Frame(512, 424, 4);
-    depth_frame->format = Frame::Float;
+    depth_frame = new float[512*424];
+  }
+
+  void createGaussianKernel(float** kernel, int size)
+  {
+	*kernel = new float[2*size+1];
+	float sigma = 0.5f*(float)size;
+
+	for(int i = -size; i <= size; i++)	
+	{
+		(*kernel)[i+size] = std::exp(-0.5f*i*i/(sigma*sigma)); 	
+	}
   }
 
   int32_t decodePixelMeasurement(unsigned char* data, int sub, int x, int y)
@@ -434,7 +444,7 @@ public:
     /*******************************************************************************
      * Predict phase variance from amplitude direct quadratic model
      ******************************************************************************/
-    void calculatePhaseUnwrappingVarDirect(float3 ir, float* var0, float* var1, float* var2)
+    void calculatePhaseUnwrappingVarDirect(float ir0, float ir1, float ir2, float* var0, float* var1, float* var2)
     {
         //Learning on amplitude gamma0*a+gamma1*a^2+gamma2
         //gamma_0 = [0.7919451669,-0.002363097609,-3.088285897]; root = 5.244403474
@@ -443,9 +453,9 @@ public:
 
         float alpha_max = 0.5f*M_PI_F;
 
-        float q0 = ir.x > 5.244404f ? 0.7919451669f*ir.x-0.002363097609f*ir.x*ir.x-3.088285897f : 1.0f/alpha_max;
-        float q1 = ir.y > 4.084835 ? 1.214266794f*ir.y-0.00581082634f*ir.y*ir.y-3.863119924f : 1.0f/alpha_max;
-        float q2 = ir.z > 6.379475 ? 0.6101457464f*ir.z-0.00113679233f*ir.z*ir.z-2.84614442f : 1.0f/alpha_max;
+        float q0 = ir0 > 5.244404f ? 0.7919451669f*ir0-0.002363097609f*ir0*ir0-3.088285897f : 1.0f/alpha_max;
+        float q1 = ir1 > 4.084835 ? 1.214266794f*ir1-0.00581082634f*ir1*ir1-3.863119924f : 1.0f/alpha_max;
+        float q2 = ir2 > 6.379475 ? 0.6101457464f*ir2-0.00113679233f*ir2*ir2-2.84614442f : 1.0f/alpha_max;
 
       float alpha0 = 1.0f/q0;
         alpha0 = alpha0 > alpha_max? alpha_max : alpha0;
@@ -469,23 +479,23 @@ public:
     /*******************************************************************************
      * Predict phase variance from amplitude quadratic atan model
      ******************************************************************************/
-    void calculatePhaseUnwrappingVar(float3 ir, float* var0, float* var1, float* var2)
+    void calculatePhaseUnwrappingVar(float ir0, float ir1, float ir2, float* var0, float* var1, float* var2)
     {
         //Learning on amplitude gamma0*a+gamma1*a^2+gamma2
         // gamma_0 = [0.8211288451,-0.002601348899,-3.549793908]; root = 5.641736705
         // gamma_1 = [1.259642407,-0.005478390508,-4.335841127];  root = 4.317051817
         // gamma_2 = [0.6447928035,-0.0009627273649,-3.368205575];root = 6.844535295
 
-        float q0 = 0.8211288451f*ir.x-0.002601348899f*ir.x*ir.x-3.549793908f;
-        float q1 = 1.259642407f*ir.y-0.005478390508f*ir.y*ir.y-4.335841127f;
-        float q2 = 0.6447928035f*ir.z-0.0009627273649f*ir.z*ir.z-3.368205575f;
+        float q0 = 0.8211288451f*ir0-0.002601348899f*ir0*ir0-3.549793908f;
+        float q1 = 1.259642407f*ir1-0.005478390508f*ir1*ir1-4.335841127f;
+        float q2 = 0.6447928035f*ir2-0.0009627273649f*ir2*ir2-3.368205575f;
         q0*=q0;
         q1*=q1;
         q2*=q2;
 
-        float alpha0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir.x > 5.64173671f/4.0f ? 5.64173671f*0.5f*M_PI_F/ir.x : 2.0f*M_PI_F;
-        float alpha1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir.y > 4.31705182f/4.0f ?  4.31705182f*0.5f*M_PI_F/ir.y : 2.0f*M_PI_F;
-        float alpha2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir.z > 6.84453530f/4.0f ? 6.84453530f*0.5f*M_PI_F/ir.z : 2.0f*M_PI_F;
+        float alpha0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir0 > 5.64173671f/4.0f ? 5.64173671f*0.5f*M_PI_F/ir0 : 2.0f*M_PI_F;
+        float alpha1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir1 > 4.31705182f/4.0f ?  4.31705182f*0.5f*M_PI_F/ir1 : 2.0f*M_PI_F;
+        float alpha2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir2 > 6.84453530f/4.0f ? 6.84453530f*0.5f*M_PI_F/ir2 : 2.0f*M_PI_F;
 
         alpha0 = alpha0 < 0.001f ? 0.001f: alpha0;
         alpha1 = alpha1 < 0.001f ? 0.001f: alpha1;
@@ -497,7 +507,7 @@ public:
 
     }
 
-  void processPixelStage2(int x, int y, float *m0, float *m1, float *m2, float *ir_out, float *phase0, float *phase0, float* conf0, float* conf1)
+  void processPixelStage2_phase(int x, int y, float *m0, float *m1, float *m2, float *ir_out, float *phase0, float *phase0, float* conf0, float* conf1)
   {
     //// 10th measurement
     //float m9 = 1; // decodePixelMeasurement(data, 9, x, y);
@@ -536,7 +546,7 @@ public:
 	{
 		//calculate phase likelihood from amplitude
 		float var0,var1,var2;
-		calculatePhaseUnwrappingVar(ir, &var0, &var1, &var2);
+		calculatePhaseUnwrappingVar(ir0, ir1, ir2, &var0, &var1, &var2);
 		phase_likelihood = exp(-(var0+var1+var2)/(2.0f*PHASE_CONFIDENCE_SCALE));
 		phase_likelihood = select(phase_likelihood, 0.0f, isnan(phase_likelihood));
 	}
@@ -571,7 +581,7 @@ public:
     *conf1 = unwrapping_likelihood2;
   }
 
-  void kernel filter_kde(const uint i, float* phase1, float* phase2, float* conf1, float* conf2, const float* gauss_filt_array, const float* z_table, const float* x_table, float** depth, float** max_val_arr)
+  void filter_kde(const unsigned int i, float* phase1, float* phase2, float* conf1, float* conf2, const float* gauss_filt_array, const float* z_table, const float* x_table, float* depth, float* max_val_arr)
   {
 	float kde_val_1, kde_val_2;
 
@@ -658,8 +668,8 @@ public:
     float depth = cond1 ? depth_fit : depth_linear; // r1.y -> later r2.z
 
     // depth
-    *depth_out[i] = depth;
-    *max_val_vec[i] = max_val;
+    depth_out[i] = depth;
+    max_val_vec[i] = max_val;
   }
 };
 
@@ -734,16 +744,10 @@ void CpuKdeDepthPacketProcessor::loadLookupTable(const short *lut)
  * Process a packet.
  * @param packet Packet to process.
  */
-void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet)
+void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet, float* depth_buffer, float* ir_buffer)
 {
-  if(listener_ == 0) return;
-
-  //impl_->startTiming();
-
-  impl_->ir_frame->timestamp = packet.timestamp;
-  impl_->depth_frame->timestamp = packet.timestamp;
-  impl_->ir_frame->sequence = packet.sequence;
-  impl_->depth_frame->sequence = packet.sequence;
+  impl_->newIrFrame();
+  impl_->newDepthFrame();
 
   Mat<Vec<float, 9> >
       m(424, 512),
@@ -779,56 +783,24 @@ void CpuKdeDepthPacketProcessor::process(const DepthPacket &packet)
   {
     m_ptr = (m.ptr(0, 0)->val);
   }
-
-  Mat<float> out_ir(424, 512, impl_->ir_frame->data), out_depth(424, 512, impl_->depth_frame->data);
-
-  if(impl_->enable_edge_filter)
-  {
-    Mat<Vec<float, 3> > depth_ir_sum(424, 512);
-    Vec<float, 3> *depth_ir_sum_ptr = depth_ir_sum.ptr(0, 0);
-    unsigned char *m_max_edge_test_ptr = m_max_edge_test.ptr(0, 0);
-
-    for(int y = 0; y < 424; ++y)
-      for(int x = 0; x < 512; ++x, m_ptr += 9, ++m_max_edge_test_ptr, ++depth_ir_sum_ptr)
-      {
-        float raw_depth, ir_sum;
-
-        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, out_ir.ptr(423 - y, x), &raw_depth, &ir_sum);
-
-        depth_ir_sum_ptr->val[0] = raw_depth;
-        depth_ir_sum_ptr->val[1] = *m_max_edge_test_ptr == 1 ? raw_depth : 0;
-        depth_ir_sum_ptr->val[2] = ir_sum;
-      }
-
-    m_max_edge_test_ptr = m_max_edge_test.ptr(0, 0);
-
-    for(int y = 0; y < 424; ++y)
+  float* phase = new float[512*424*2];
+  float* conf = new float[512*424*2];
+  Mat<float> out_ir(424, 512, impl_->ir_frame), out_depth(424, 512, impl_->depth_frame);
+  for(int y = 0; y < 424; ++y)
       for(int x = 0; x < 512; ++x, ++m_max_edge_test_ptr)
       {
-        impl_->filterPixelStage2(x, y, depth_ir_sum, *m_max_edge_test_ptr == 1, out_depth.ptr(423 - y, x));
+  	impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->ir_frame, phase + 0, phase+512*424, conf + 0, conf + 512*424);
       }
-  }
-  else
-  {
-    for(int y = 0; y < 424; ++y)
-      for(int x = 0; x < 512; ++x, m_ptr += 9)
-      {
-        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, out_ir.ptr(423 - y, x), out_depth.ptr(423 - y, x), 0);
-      }
-  }
 
+  float* final_conf = new float[512*424];
+  for(unsigned int i = 0; i < 512*424; ++i)
+  {
+     impl_->filter_kde(i, phase + 0, phase + 512*424, conf + 0, conf + 512*424, impl_->gauss_filt_kernel, impl_->z_table, impl_->x_table, impl_->depth_frame, final_conf);
+  }
   //impl_->stopTiming(LOG_INFO);
 
-  if (listener_ != 0 ){
-    if(listener_->onNewFrame(Frame::Ir, impl_->ir_frame))
-    {
-      impl_->newIrFrame();
-    }
-
-    if(listener_->onNewFrame(Frame::Depth, impl_->depth_frame))
-    {
-      impl_->newDepthFrame();
-    }
-  }
-
+    depth_buffer = impl_->depth_frame;
+    ir_buffer = imple_->ir_frame;
+    delete[] phase;
+    delete[] conf;
 }
