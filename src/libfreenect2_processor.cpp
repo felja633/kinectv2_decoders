@@ -82,8 +82,8 @@ public:
 
   ~CpuDepthPacketProcessorImpl()
   {
-    delete ir_frame;
-    delete depth_frame;
+    //delete ir_frame;
+    //delete depth_frame;
   }
 
   /** Allocate a new depth frame. */

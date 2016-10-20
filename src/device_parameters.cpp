@@ -1,12 +1,14 @@
 #include "device_parameters.h"
 #include "libfreenect2_data_structures.h"
-#include <string>
+#include <math.h>
+#include <iostream>
+#include <limits>
 
 DeviceParametersHandler::DeviceParametersHandler()
 {
     ztable = new float[TABLE_SIZE];
     xtable = new float[TABLE_SIZE];
-    lut = new float[LUT_SIZE];
+    lut = new short[LUT_SIZE];
 }
 
 DeviceParametersHandler::~DeviceParametersHandler()
@@ -74,7 +76,7 @@ void DeviceParametersHandler::initializeRelativePoseFromFile(double** rotation, 
 {
 	Relative_Pose_To_Save pose;
 	hid_t      s1_tid;                          /* File datatype identifier */
-  hid_t      file_id, dataset, space, vlen_tid_rot, vlen_tid_trans;
+    hid_t      file_id, dataset, space, vlen_tid_rot, vlen_tid_trans;
 
 	file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 	dataset = H5Dopen(file_id, "relative_pose",H5P_DEFAULT);
@@ -161,10 +163,10 @@ void DeviceParametersHandler::init(std::string filename)
     lut[1024] = 32767;
 }
 
-  //x,y: undistorted, normalized coordinates
-  //xd,yd: distorted, normalized coordinates
-  void DeviceParametersHandler::distort(double x, double y, double &xd, double &yd, double k1, double k2, double k3, double p1, double p2) const
-  {
+//x,y: undistorted, normalized coordinates
+//xd,yd: distorted, normalized coordinates
+void DeviceParametersHandler::distort(double x, double y, double &xd, double &yd, double k1, double k2, double k3, double p1, double p2)
+{
     double x2 = x * x;
     double y2 = y * y;
     double r2 = x2 + y2;
@@ -172,13 +174,13 @@ void DeviceParametersHandler::init(std::string filename)
     double kr = ((k3 * r2 + k2) * r2 + k1) * r2 + 1.0;
     xd = x*kr + p2*(r2 + 2*x2) + 2*p1*xy;
     yd = y*kr + p1*(r2 + 2*y2) + 2*p2*xy;
-  }
+}
 
-  //The inverse of distort() using Newton's method
-  //Return true if converged correctly
-  //This function considers tangential distortion with double precision.
-  bool DeviceParametersHandler::undistort(double x, double y, double &xu, double &yu, double k1, double k2, double k3, double p1, double p2) const
-  {
+//The inverse of distort() using Newton's method
+//Return true if converged correctly
+//This function considers tangential distortion with double precision.
+bool DeviceParametersHandler::undistort(double x, double y, double &xu, double &yu, double k1, double k2, double k3, double p1, double p2)
+{
     double x0 = x;
     double y0 = y;
 
@@ -222,5 +224,5 @@ void DeviceParametersHandler::init(std::string filename)
     xu = x;
     yu = y;
     return iter < max_iterations;
-  }
+}
 

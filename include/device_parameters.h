@@ -3,6 +3,7 @@
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
+#include <string>
 
 struct Relative_Pose_To_Save
 {
@@ -48,19 +49,21 @@ class DeviceParametersHandler
         DeviceParametersHandler();
         ~DeviceParametersHandler();
         void init(std::string filename);
-        float *ztables, *xtables, *lut;
+        float *ztable, *xtable;
+        short* lut;
     private:
         void readCameraParametersFromFile(double** ir_dist, double** rgb_dist, double** ir_intr, double** rgb_intr, double** rotation, double** translation, std::string filename);
         void initializeCameraFromFile(double** dist, double** intr, std::string filename, std::string datastname);
-        bool DeviceParametersHandler::undistort(double x, double y, double &xu, double &yu, double k1, double k2, double k3, double p1, double p2) const;
-        void DeviceParametersHandler::distort(double x, double y, double &xd, double &yd, double k1, double k2, double k3, double p1, double p2) const;
+        void initializeRelativePoseFromFile(double** rotation, double** translation, std::string filename);
+        bool undistort(double x, double y, double &xu, double &yu, double k1, double k2, double k3, double p1, double p2);
+        void distort(double x, double y, double &xd, double &yd, double k1, double k2, double k3, double p1, double p2);
 
         //Depth decoding
         
         //intrinsics
-        float *ir_distortion_parameters, *rgb_distortion_parameters, *ir_camera_matrix, *rgb_camera_matrix;
+        double *ir_distortion_parameters, *rgb_distortion_parameters, *ir_camera_matrix, *rgb_camera_matrix;
         //extrinsics
-        float* rotation, *translation;
+        double* rotation, *translation;
 };
 
 
