@@ -4,18 +4,17 @@
 #include <iostream>
 #include <limits>
 
-DeviceParametersHandler::DeviceParametersHandler()
+DeviceParametersHandler::DeviceParametersHandler() : xtable(TABLE_SIZE),
+    ztable(TABLE_SIZE),
+lut(LUT_SIZE)
 {
-    ztable = new float[TABLE_SIZE];
-    xtable = new float[TABLE_SIZE];
-    lut = new short[LUT_SIZE];
 }
 
 DeviceParametersHandler::~DeviceParametersHandler()
 {
-    delete[] ztable;
-    delete[] xtable;
-    delete[] lut;
+    ztable.clear();
+    xtable.clear();
+    lut.clear();
 }
 
 void DeviceParametersHandler::initializeCameraFromFile(double** dist, double** intr, std::string filename, std::string datastname)

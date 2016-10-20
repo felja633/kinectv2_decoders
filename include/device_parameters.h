@@ -4,6 +4,7 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 #include <string>
+#include <vector>
 
 struct Relative_Pose_To_Save
 {
@@ -49,8 +50,8 @@ class DeviceParametersHandler
         DeviceParametersHandler();
         ~DeviceParametersHandler();
         void init(std::string filename);
-        float *ztable, *xtable;
-        short* lut;
+        std::vector<float> ztable, xtable;
+        std::vector<short> lut;
     private:
         void readCameraParametersFromFile(double** ir_dist, double** rgb_dist, double** ir_intr, double** rgb_intr, double** rotation, double** translation, std::string filename);
         void initializeCameraFromFile(double** dist, double** intr, std::string filename, std::string datastname);

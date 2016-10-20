@@ -61,7 +61,7 @@ public:
   bool enable_bilateral_filter, enable_edge_filter;
   Parameters params;
 
-  float *ir_frame, *depth_frame;
+  float *conf_frame, *depth_frame;
   float *gauss_filt_kernel;
   bool flip_ptables;
 
@@ -77,9 +77,9 @@ public:
   }
 
   /** Allocate a new IR frame. */
-  void newIrFrame()
+  void newConfFrame()
   {
-    ir_frame = new float[512*424];
+    conf_frame = new float[512*424];
     
     //ir_frame = new Frame(512, 424, 12);
   }
@@ -224,7 +224,7 @@ public:
    * Transform measurement.
    * @param [in, out] m Measurement.
    */
-  void transformMeasurements(float* m)
+  void transformMeasurements(float* m, float* m_out)
   {
     float tmp0 = std::atan2((m[1]), (m[0]));
     tmp0 = tmp0 < 0 ? tmp0 + M_PI * 2.0f : tmp0;
@@ -232,9 +232,10 @@ public:
 
     float tmp1 = std::sqrt(m[0] * m[0] + m[1] * m[1]) * params.ab_multiplier;
 
-    m[0] = tmp0; // phase
-    m[1] = tmp1; // ir amplitude - (possibly bilateral filtered)
+    m_out[0] = tmp0; // phase
+    m_out[1] = tmp1; // ir amplitude - (possibly bilateral filtered)
   }
+
 
   /**
    * Process first pixel stage.
@@ -509,20 +510,12 @@ public:
 
     }
 
-  void processPixelStage2_phase(int x, int y, float *m0, float *m1, float *m2, float *ir_out, float *phase0, float *phase1, float* conf0, float* conf1)
+  void processPixelStage2_phase(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *ir_out, float *phase0, float *phase1, float* conf0, float* conf1)
   {
-    //// 10th measurement
-    //float m9 = 1; // decodePixelMeasurement(data, 9, x, y);
-    //
-    //// WTF?
-    //bool cond0 = zmultiplier == 0 || (m9 >= 0 && m9 < 32767);
-    //m9 = std::max(-m9, m9);
-    //// if m9 is positive or pixel is invalid (zmultiplier) we set it to 0 otherwise to its absolute value O.o
-    //m9 = cond0 ? 0 : m9;
-
-    transformMeasurements(m0);
-    transformMeasurements(m1);
-    transformMeasurements(m2);
+    float m0[2], m1[2], m2[2];
+    transformMeasurements(m0_in, m0);
+    transformMeasurements(m1_in, m1);
+    transformMeasurements(m2_in, m2);
     m0[1] = std::isnan(m0[1]) ? 0.0f : m0[1];
     m1[1] = std::isnan(m1[1]) ? 0.0f : m1[1];
     m2[1] = std::isnan(m2[1]) ? 0.0f : m2[1];
@@ -571,10 +564,12 @@ public:
     //ir_out[1] = std::min(m1[2] * ab_output_multiplier, 65535.0f);
     //ir_out[2] = std::min(m2[2] * ab_output_multiplier, 65535.0f);
     // this seems to be the phase to depth mapping :)
-    *phase0 = phase_first;
-    *phase1 = phase_second;
-    *conf0 = unwrapping_likelihood1;
-    *conf1 = unwrapping_likelihood2;
+
+    int ind = x+512*y;
+    phase0[ind] = phase_first;
+    phase1[ind] = phase_second;
+    conf0[ind] = unwrapping_likelihood1;
+    conf1[ind] = unwrapping_likelihood2;
   }
 
   void filter_kde(const unsigned int i, float* phase1, float* phase2, float* conf1, float* conf2, const float* gauss_filt_array, float* depth_out, float* max_val_arr)
@@ -645,7 +640,7 @@ public:
 	float phase_final = val_ind ? phase_local1: phase_local2;
 	float max_val = val_ind ? kde_val_1: kde_val_2;
 	unsigned int x = i % 512;
-	unsigned int y = i / 512;
+	unsigned int y = 423 - (i / 512);
     float zmultiplier = z_table.at(y, x);
     float xmultiplier = x_table.at(y, x);
 
@@ -663,9 +658,11 @@ public:
     depth_fit = depth_fit < 0 ? 0 : depth_fit;
     float depth = cond1 ? depth_fit : depth_linear; // r1.y -> later r2.z
 
+    unsigned int out_i = x+512*y;
     // depth
-    depth_out[i] = depth;
-    max_val_arr[i] = max_val;
+    //std::cout<<out_i<<std::endl;
+    depth_out[out_i] = depth;
+    max_val_arr[out_i] = max_val;
   }
 };
 
@@ -740,9 +737,9 @@ void CpuKdeDepthPacketProcessor::loadLookupTable(const short *lut)
  * Process a packet.
  * @param packet Packet to process.
  */
-void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffer, float** ir_buffer)
+void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffer, float** kde_conf)
 {
-  impl_->newIrFrame();
+  impl_->newConfFrame();
   impl_->newDepthFrame();
 
   Mat<Vec<float, 9> >
@@ -770,7 +767,7 @@ void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_bu
       {
         bool max_edge_test_val = true;
         impl_->filterPixelStage1(x, y, m, m_filtered_ptr, max_edge_test_val);
-        *m_max_edge_test_ptr = max_edge_test_val ? 1 : 0;
+        //*m_max_edge_test_ptr = max_edge_test_val ? 1 : 0;
       }
 
     m_ptr = (m_filtered.ptr(0, 0)->val);
@@ -781,22 +778,21 @@ void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_bu
   }
   float* phase = new float[512*424*2];
   float* conf = new float[512*424*2];
-  Mat<float> out_ir(424, 512, impl_->ir_frame), out_depth(424, 512, impl_->depth_frame);
+
   for(int y = 0; y < 424; ++y)
-      for(int x = 0; x < 512; ++x)
+      for(int x = 0; x < 512; ++x, m_ptr += 9)
       {
-  	impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->ir_frame, phase + 0, phase+512*424, conf + 0, conf + 512*424);
+  	     impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->conf_frame, phase + 0, phase+512*424, conf + 0, conf + 512*424);
       }
 
-  float* final_conf = new float[512*424];
   for(unsigned int i = 0; i < 512*424; ++i)
   {
-     impl_->filter_kde(i, phase + 0, phase + 512*424, conf + 0, conf + 512*424, impl_->gauss_filt_kernel, impl_->depth_frame, final_conf);
+     impl_->filter_kde(i, phase + 0, phase + 512*424, conf + 0, conf + 512*424, impl_->gauss_filt_kernel, impl_->depth_frame, impl_->conf_frame);
   }
   //impl_->stopTiming(LOG_INFO);
 
     *depth_buffer = impl_->depth_frame;
-    *ir_buffer = impl_->ir_frame;
+    *kde_conf = impl_->conf_frame;
     delete[] phase;
     delete[] conf;
 }
