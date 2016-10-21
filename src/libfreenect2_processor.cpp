@@ -63,12 +63,15 @@ public:
 
   CpuDepthPacketProcessorImpl()
   {
-    //newIrFrame();
-    //newDepthFrame();
 
-    enable_bilateral_filter = true;
-    enable_edge_filter = true;
+  }
 
+  void init(Parameters in_params)
+  {
+    params = in_params;
+    enable_bilateral_filter = in_params.enable_bilateral_filter;
+    enable_edge_filter = in_params.enable_edge_filter;
+    
     flip_ptables = true;
   }
 
@@ -706,6 +709,10 @@ void CpuDepthPacketProcessor::loadLookupTable(const short *lut)
   std::copy(lut, lut + LUT_SIZE, impl_->lut11to16);
 }
 
+void CpuDepthPacketProcessor::initParameters(Parameters param)
+{
+    impl_->init(param);
+}
 /**
  * Process a packet.
  * @param packet Packet to process.

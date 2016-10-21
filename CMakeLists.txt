@@ -11,7 +11,8 @@ set(kinectv2_decoders_src run_decoders.cpp
                         src/libfreenect2_processor.cpp
                         src/kde_processor.cpp
                         src/device_parameters.cpp
-                        src/read_file_handler.cpp)
+                        src/read_file_handler.cpp
+                        src/setup_parser.cpp)
 
 add_executable(kinectv2_decoders ${kinectv2_decoders_src})
 target_link_libraries(kinectv2_decoders ${HDF5_LIBRARIES} hdf5_hl)

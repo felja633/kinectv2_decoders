@@ -1,0 +1,13 @@
+<?xml vesrion="1.0" encoding="UTF-8"?>
+<setup name="base">
+  <pipeline name="libfreenect2" setup_name="base">
+      <Parameters>
+      
+      </Parameters>
+  </pipeline>
+  <pipeline name="kde" setup_name="base">
+      <Parameters>
+      
+      </Parameters>
+  </pipeline>
+</setup>
