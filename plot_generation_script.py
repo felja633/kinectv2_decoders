@@ -22,15 +22,19 @@ def classify_depth_points(depth_images, ground_truth, inlier_threshold):
 
     sh = depth_images.shape
 
-    mask_inliers = np.zeros(sh) 
-    mask_outliers = np.zeros(sh) 
+    mask_inliers = np.zeros(sh,dtype=bool) 
+    mask_outliers = np.zeros(sh,dtype=bool) 
+    print("sh[2] = ", sh[2])
     for i in range(0,sh[2]):
-        inds= (abs(ground_truth[:,:,0] - depth_images[:,:,i]) < inlier_threshold)
-        mask_inliers[inds,i] = 1
-        inds = (ground_truth[:,:,0] > 0.0)
-        mask_inliers[inds,i] = 1
-        inds = mask_inliers[inds,i] == 1 & (ground_truth[:,:,0] > 0.0)
-        mask_outliers[inds,i] = 1
+        mask_inliers[:,:,i] = (np.abs(ground_truth[:,:,0] - depth_images[:,:,i]) < inlier_threshold) & (ground_truth[:,:,0] > 0.0)
+        #mask_inliers[np.where(inds),i] = 1
+        mask_outliers[:,:,i] = (mask_inliers[:,:,i] != 1) & (ground_truth[:,:,0] > 0.0)
+        #plt.figure(4)
+        #plt.imshow(mask_outliers[:,:,i])
+        #plt.figure(5)
+        #plt.imshow(depth_images[:,:,i])
+        #plt.show()
+        #mask_outliers[np.where(inds),i] = 1
 
     return mask_inliers, mask_outliers
 
@@ -58,20 +62,21 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
     for t in range(0,num_thresh):
         for i in range(0,num_images):
             mask = max_vals_images[:,:,i] > max_val_thresh[t]
-            inliers = mask & (mask_inliers[:,:,i] == 1)
-            num_inliers[i,t] = np.count_nonzero(inliers[:])
-            outliers = mask & (mask_outliers[:,:,i] == 1)
-            num_outliers[i,t] = np.count_nonzero(outliers[:])
+            inliers = mask & mask_inliers[:,:,i]
+            num_inliers[i,t] = np.count_nonzero(inliers.ravel())
+            #print("num_inliers = ",num_inliers[i,t])
+            outliers = mask & mask_outliers[:,:,i]
+            num_outliers[i,t] = np.count_nonzero(outliers.ravel())
             
-        print("t = ",t)
+        #print("t = ",t)
 
     print("asdf", num_pixels)
-    print(num_inliers.shape)
-    print(num_inliers/num_pixels)
-    inlier_rate = np.mean(num_inliers/num_pixels,1)
-    outlier_rate = np.mean(num_outliers/num_pixels,1)
-    inlier_rate_std = np.std(num_inliers/num_pixels,1)
-    outlier_rate_std = np.std(num_outliers/num_pixels,1)
+    #print(num_inliers.shape)
+    #print(num_inliers/num_pixels)
+    inlier_rate = np.mean(num_inliers/num_pixels,axis=0)
+    outlier_rate = np.mean(num_outliers/num_pixels,axis=0)
+    inlier_rate_std = np.std(num_inliers/num_pixels,axis=0)
+    outlier_rate_std = np.std(num_outliers/num_pixels,axis=0)
     thresholds = max_val_thresh
 
     return inlier_rate, outlier_rate, inlier_rate_std, outlier_rate_std, thresholds
@@ -81,7 +86,7 @@ def run_test(ground_truth_file, max_val_file, depth_images_file, inlier_threshol
     max_val_images, num_images = load_images_bin( max_val_file )
     depth_images, num_images = load_images_bin( depth_images_file )
     print('max_val_images ', max_val_images.shape)
-    print('depth_images', depth_images.shape)
+    print('depth_images', depth_images[300,300,1])
     print('ground_truth', ground_truth.shape)
     
     inlier_rate, outlier_rate, inlier_rate_std, outlier_rate_std, thresholds = generate_inlier_outlier_rates(max_val_images, depth_images, ground_truth, inlier_threshold, num_points, num_images)
@@ -89,7 +94,7 @@ def run_test(ground_truth_file, max_val_file, depth_images_file, inlier_threshol
     print(inlier_rate)
     plt.figure(fig_num)
     plt.clf()
-    plt.plot(inlier_rate, outlier_rate,'-')
+    plt.plot(np.log(outlier_rate),inlier_rate,'-')
     plt.show()
 
 
