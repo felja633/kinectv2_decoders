@@ -71,8 +71,10 @@ int main(int argc, char** argv)
             std::cout<<"pipeline "<<params[i].pipeline<<" not implemented\n";
             continue;
         }
-        std::string depth_filename = params[i].pipeline;
-        std::string conf_filename = params[i].pipeline;
+        std::string depth_filename = "../data/";
+				depth_filename.append(params[i].pipeline);
+        std::string conf_filename = "../data";
+				conf_filename.append(params[i].pipeline);
         
         depth_filename.append("_depth_");
         depth_filename.append(params[i].setup_name);

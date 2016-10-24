@@ -1,7 +1,11 @@
 import numpy as np
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import sys
 import pylab
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, Comment, tostring
+
 #
 # loads float array images (424x512xtot_ims) from binary file
 #
@@ -16,25 +20,29 @@ def load_images_bin( filename ):
     return depth_images, tot_ims
 
 #
+# loads float array images (424x510) from binary file
+#
+def load_gt_bin( filename ):
+
+    infile = open(filename, "r")
+    data = np.fromfile(infile, dtype=np.float32)
+    #depth_images = np.empty((512, 424, tot_ims)) 
+    depth_images = data.reshape(510, 424).transpose()
+    return depth_images
+#
 # sets image points to inlier or outlier
 #
-def classify_depth_points(depth_images, ground_truth, inlier_threshold):
+def classify_depth_points(depth_images, ground_truth, inlier_threshold, num_images):
 
-    sh = depth_images.shape
-
+    sh = depth_images[1:511,:,:].shape
+    
     mask_inliers = np.zeros(sh,dtype=bool) 
     mask_outliers = np.zeros(sh,dtype=bool) 
-    print("sh[2] = ", sh[2])
-    for i in range(0,sh[2]):
-        mask_inliers[:,:,i] = (np.abs(ground_truth[:,:,0] - depth_images[:,:,i]) < inlier_threshold) & (ground_truth[:,:,0] > 0.0)
-        #mask_inliers[np.where(inds),i] = 1
-        mask_outliers[:,:,i] = (mask_inliers[:,:,i] != 1) & (ground_truth[:,:,0] > 0.0)
-        #plt.figure(4)
-        #plt.imshow(mask_outliers[:,:,i])
-        #plt.figure(5)
-        #plt.imshow(depth_images[:,:,i])
-        #plt.show()
-        #mask_outliers[np.where(inds),i] = 1
+    print("sh = ", sh)
+    for i in range(0,num_images):
+        
+        mask_inliers[:,:,i] = (np.abs(ground_truth.transpose() - depth_images[1:511,:,i]) < inlier_threshold) & (ground_truth.transpose() > 0.0)
+        mask_outliers[:,:,i] = (mask_inliers[:,:,i] != 1) & (ground_truth.transpose() > 0.0)
 
     return mask_inliers, mask_outliers
 
@@ -53,7 +61,7 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
    
     num_thresh = len(max_val_thresh)
     print("num_thresh = ", num_thresh)
-    mask_inliers, mask_outliers = classify_depth_points(depth, ground_truth, inlier_threshold)
+    mask_inliers, mask_outliers = classify_depth_points(depth, ground_truth, inlier_threshold, num_images)
 
     num_pixels = np.count_nonzero(ground_truth)
     num_inliers = np.zeros((num_images,num_thresh))
@@ -61,18 +69,13 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
 
     for t in range(0,num_thresh):
         for i in range(0,num_images):
-            mask = max_vals_images[:,:,i] > max_val_thresh[t]
+            mask = max_vals_images[1:511,:,i] > max_val_thresh[t]
             inliers = mask & mask_inliers[:,:,i]
             num_inliers[i,t] = np.count_nonzero(inliers.ravel())
-            #print("num_inliers = ",num_inliers[i,t])
             outliers = mask & mask_outliers[:,:,i]
             num_outliers[i,t] = np.count_nonzero(outliers.ravel())
             
-        #print("t = ",t)
 
-    print("asdf", num_pixels)
-    #print(num_inliers.shape)
-    #print(num_inliers/num_pixels)
     inlier_rate = np.mean(num_inliers/num_pixels,axis=0)
     outlier_rate = np.mean(num_outliers/num_pixels,axis=0)
     inlier_rate_std = np.std(num_inliers/num_pixels,axis=0)
@@ -81,22 +84,54 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
 
     return inlier_rate, outlier_rate, inlier_rate_std, outlier_rate_std, thresholds
 
-def run_test(ground_truth_file, max_val_file, depth_images_file, inlier_threshold, num_points, fig_num):
-    ground_truth, num_images = load_images_bin( ground_truth_file )
+def parse_setup_xml(filename, dataset):
+    tree=ET.parse(filename)
+    root = tree.getroot()
+
+    depth_file_string = []
+    conf_file_string = []
+    pipeline_names = []
+    for pipeline in root.iter('pipeline'):    
+        pipeline_name = pipeline.attrib['name']
+        pipeline_names.append(pipeline_name)
+        setup_name = pipeline.attrib['setup_name']
+
+        depth_filename = "data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
+        depth_file_string.append(depth_filename)
+        conf_filename = "data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
+        conf_file_string.append(conf_filename)
+
+    return depth_file_string, conf_file_string, pipeline_names
+
+def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, num_points, fig_num, pipelane_name):
     max_val_images, num_images = load_images_bin( max_val_file )
     depth_images, num_images = load_images_bin( depth_images_file )
-    print('max_val_images ', max_val_images.shape)
-    print('depth_images', depth_images[300,300,1])
+    #print('max_val_images ', max_val_images.shape)
+    #print('depth_images', depth_images[300,300,1])
     print('ground_truth', ground_truth.shape)
     
     inlier_rate, outlier_rate, inlier_rate_std, outlier_rate_std, thresholds = generate_inlier_outlier_rates(max_val_images, depth_images, ground_truth, inlier_threshold, num_points, num_images)
 
     print(inlier_rate)
     plt.figure(fig_num)
-    plt.clf()
-    plt.plot(np.log(outlier_rate),inlier_rate,'-')
-    plt.show()
+    
+    #plt.clf()
+    line = plt.plot(np.log(outlier_rate),inlier_rate,'-', label=pipelane_name)
+    first_legend = plt.legend(loc=4)
+    #red_patch = mpatches.Patch(color='red', label='The red data')
+    #plt.legend(handles=[red_patch])
+    #plt.show()
 
+
+def compare_pipelines(xml_filename, dataset):
+    gt = load_gt_bin( "data/"+dataset+"_gt.bin" )
+    depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
+    i = 0
+    while i < len(depth_file_string):
+        run_test(gt, conf_file_string[i], depth_file_string[i], 300, 20, 1,pipeline_names[i])
+        i += 1
+
+    plt.show()
 
 def visualize_frame(args):
     depth_images_file = args[1]
@@ -132,6 +167,11 @@ if __name__ == "__main__":
 
         visualize_frame(args)
     elif args[0] == 'test':
-        print('not implemented')
+        if len(args) < 2:
+            print('not enough arguments')
+            print('len(args) = ', len(args))
+            exit()
+
+        compare_pipelines(args[1], args[2])
     else:
         print('not implemented')

@@ -1,4 +1,4 @@
-<?xml vesrion="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <setup name="base">
   <pipeline name="libfreenect2" setup_name="base">
       <Parameters>
