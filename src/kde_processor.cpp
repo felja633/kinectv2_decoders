@@ -596,7 +596,7 @@ public:
 
     }
 
-  void processPixelStage2_phase(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *ir_out, float *phase0, float *phase1, float* conf0, float* conf1)
+  void processPixelStage2_phase(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *phase0, float *phase1, float* conf0, float* conf1)
   {
     float m0[2], m1[2], m2[2];
     transformMeasurements(m0_in, m0);
@@ -642,15 +642,6 @@ public:
 	unwrapping_likelihood1 = phase_first > params.max_depth*9.0f/18750.0f ? 0.0f: unwrapping_likelihood1;
 	unwrapping_likelihood2 = phase_second > params.max_depth*9.0f/18750.0f ? 0.0f: unwrapping_likelihood2;
 
-    // ir
-    //*ir_out = std::min((m1[2]) * ab_output_multiplier, 65535.0f);
-    // ir avg
-    *ir_out = std::min((m0[2] + m1[2] + m2[2]) * 0.3333333f * params.ab_output_multiplier, 65535.0f);
-    //ir_out[0] = std::min(m0[2] * ab_output_multiplier, 65535.0f);
-    //ir_out[1] = std::min(m1[2] * ab_output_multiplier, 65535.0f);
-    //ir_out[2] = std::min(m2[2] * ab_output_multiplier, 65535.0f);
-    // this seems to be the phase to depth mapping :)
-
     int ind = x+512*y;
     phase0[ind] = phase_first;
     phase1[ind] = phase_second;
@@ -658,7 +649,7 @@ public:
     conf1[ind] = unwrapping_likelihood2;
   }
 
-  void processPixelStage2_phase3(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *ir_out, float *phase0, float *phase1, float *phase2, float* conf0, float* conf1, float* conf2)
+  void processPixelStage2_phase3(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *phase0, float *phase1, float *phase2, float* conf0, float* conf1, float* conf2)
   {
     float m0[2], m1[2], m2[2];
     transformMeasurements(m0_in, m0);
@@ -695,17 +686,7 @@ public:
 		phase_likelihood = 0.0f;
 	}
 
-    // ir
-    //*ir_out = std::min((m1[2]) * ab_output_multiplier, 65535.0f);
-    // ir avg
-    *ir_out = std::min((m0[2] + m1[2] + m2[2]) * 0.3333333f * params.ab_output_multiplier, 65535.0f);
-    //ir_out[0] = std::min(m0[2] * ab_output_multiplier, 65535.0f);
-    //ir_out[1] = std::min(m1[2] * ab_output_multiplier, 65535.0f);
-    //ir_out[2] = std::min(m2[2] * ab_output_multiplier, 65535.0f);
-    // this seems to be the phase to depth mapping :)
-
-
-    unwrapping_likelihood1 = phase_likelihood*exp(-J_1/(2*params.unwrapping_likelihood_scale));
+  unwrapping_likelihood1 = phase_likelihood*exp(-J_1/(2*params.unwrapping_likelihood_scale));
 	unwrapping_likelihood2 = phase_likelihood*exp(-J_2/(2*params.unwrapping_likelihood_scale));
 	unwrapping_likelihood3 = phase_likelihood*exp(-J_3/(2*params.unwrapping_likelihood_scale));
 
@@ -727,8 +708,8 @@ public:
   {
 	float kde_val_1, kde_val_2;
 
-	const int loadX = i % 512;
-	const int loadY = i / 512;
+	const int unsigned loadX = i % 512;
+	const int unsigned loadY = i / 512;
 
 	int k, l;
     float sum_1, sum_2;
@@ -744,7 +725,7 @@ public:
 	float phase_local1 = phase1[i];
 	float phase_local2 = phase2[i];
 
-	if(loadX >= 1 && loadX < 511 && loadY >= 0 && loadY<424)
+	if(loadX >= 1 && loadX < 511 && loadY<424)
     {
         sum_1=0.0f;
 		sum_2=0.0f;
@@ -820,8 +801,8 @@ public:
   {
 	float kde_val_1, kde_val_2, kde_val_3;
 
-	const int loadX = i % 512;
-	const int loadY = i / 512;
+	const int unsigned loadX = i % 512;
+	const int unsigned loadY = i / 512;
 
 	int k, l;
     float sum_1, sum_2, sum_3;
@@ -839,7 +820,7 @@ public:
 	float phase_local2 = phase2[i];
     float phase_local3 = phase3[i];
 
-	if(loadX >= 1 && loadX < 511 && loadY >= 0 && loadY<424)
+	if(loadX >= 1 && loadX < 511 && loadY<424)
     {
         sum_1=0.0f;
 		sum_2=0.0f;
@@ -1061,10 +1042,10 @@ void CpuKdeDepthPacketProcessor::process(unsigned char* buffer, float** depth_bu
          switch(impl_->params.num_hyps)
          {
             case 2:
-  	            impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->conf_frame, phase + 0, phase+512*424, conf + 0, conf + 512*424);
+  	            impl_->processPixelStage2_phase(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, phase + 0, phase+512*424, conf + 0, conf + 512*424);
                 break;
             case 3:
-                impl_->processPixelStage2_phase3(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, impl_->conf_frame, phase + 0, phase+512*424, phase+512*424*2, conf + 0, conf + 512*424, conf + 512*424*2);
+                impl_->processPixelStage2_phase3(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, phase + 0, phase+512*424, phase+512*424*2, conf + 0, conf + 512*424, conf + 512*424*2);
                 break;
             default:
                 std::cout<<"kde processor with "<<impl_->params.num_hyps<<" hypotheses not implemented\n";

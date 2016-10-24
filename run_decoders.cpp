@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     std::cout<<argc<<std::endl;
     if(argc != 4)
     {
-        std::cout<<"must have 3 arguments\n";
+        std::cout<<"usage:\n ./kinectv2_decoders /path/to/convig/setup.xml dataset /path/to/dataset/";
         return 0;
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 
     //decode and save frames to file
     int frame_num;
-    int frame_num_offset = 100;
+    int frame_num_offset = 0;
     int num_frames = 10;
     for(frame_num = frame_num_offset; frame_num < num_frames+frame_num_offset; frame_num++)
     {

@@ -353,7 +353,7 @@ public:
     }
   }
 
-  void processPixelStage2(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *ir_out, float *depth_out, float *ir_sum_out)
+  void processPixelStage2(int x, int y, float *m0_in, float *m1_in, float *m2_in, float *depth_out, float *ir_sum_out)
   {
     //// 10th measurement
     //float m9 = 1; // decodePixelMeasurement(data, 9, x, y);
@@ -493,7 +493,7 @@ public:
     // ir
     //*ir_out = std::min((m1[2]) * ab_output_multiplier, 65535.0f);
     // ir avg
-    *ir_out = std::min((m0[2] + m1[2] + m2[2]) * 0.3333333f * params.ab_output_multiplier, 65535.0f);
+    //*ir_out = std::min((m0[2] + m1[2] + m2[2]) * 0.3333333f * params.ab_output_multiplier, 65535.0f);
     //ir_out[0] = std::min(m0[2] * ab_output_multiplier, 65535.0f);
     //ir_out[1] = std::min(m1[2] * ab_output_multiplier, 65535.0f);
     //ir_out[2] = std::min(m2[2] * ab_output_multiplier, 65535.0f);
@@ -766,7 +766,7 @@ void CpuDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffe
   Mat<float> out_conf(424, 512, impl_->conf_frame), out_depth(424, 512, impl_->depth_frame);
     
   float* ir_arr = new float[512*424];
-  Mat<float> ir_mat(424, 512, ir_arr);
+  //Mat<float> ir_mat(424, 512, ir_arr);
 
   if(impl_->enable_edge_filter)
   {
@@ -779,7 +779,7 @@ void CpuDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffe
       {
         float raw_depth, ir_sum;
 
-        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, ir_mat.ptr(423 - y, x), &raw_depth, &ir_sum);
+        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, &raw_depth, &ir_sum);
         impl_->processPixelStage2_nomask(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, out_depth.ptr(423 - y, x));
         depth_ir_sum_ptr->val[0] = raw_depth;
         depth_ir_sum_ptr->val[1] = *m_max_edge_test_ptr == 1 ? raw_depth : 0;
@@ -802,7 +802,7 @@ void CpuDepthPacketProcessor::process(unsigned char* buffer, float** depth_buffe
     for(int y = 0; y < 424; ++y)
       for(int x = 0; x < 512; ++x, m_ptr += 9)
       {
-        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, ir_mat.ptr(423 - y, x), out_conf.ptr(423 - y, x), 0);
+        impl_->processPixelStage2(x, y, m_ptr + 0, m_ptr + 3, m_ptr + 6, out_conf.ptr(423 - y, x), 0);
         float tmp_conf = *out_conf.ptr(423 - y, x);
         if(tmp_conf != 0.0f)
           *out_conf.ptr(423 - y, x) = 1.0f; 

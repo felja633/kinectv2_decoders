@@ -68,9 +68,9 @@ void SetupParser::insertParameterValue(Parameters &params, rapidxml::xml_node<>*
 {
     //strcmp(str1,str2)
     if(strcmp(node->name(),"enable_bilateral_filter") == 0)
-        params.enable_bilateral_filter = node->value() == "1";
+        params.enable_bilateral_filter = strcmp(node->value(), "1");
     else if(strcmp(node->name(),"enable_edge_filter") == 0)
-        params.enable_edge_filter = node->value() == "1";
+        params.enable_edge_filter = strcmp(node->value(), "1");
     else if(strcmp(node->name(),"joint_bilateral_ab_threshold") == 0)
         params.joint_bilateral_ab_threshold = std::atof(node->value());
     else if(strcmp(node->name(),"joint_bilateral_max_edge") == 0)

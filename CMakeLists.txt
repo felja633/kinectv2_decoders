@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+set(CMAKE_CXX_FLAGS "-Wall -pedantic -Wextra")
 
 project(kinectv2_decoders)
 find_package(HDF5 REQUIRED)
