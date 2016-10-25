@@ -3,8 +3,14 @@ The algorithm is described in the paper "Efficient Phase Unwrapping using Kernel
 Density Estimation", ECCV 2016, Felix Järemo Lawin, Per-Erik Forssen and 
 Hannes Ovren, see http://www.cvl.isy.liu.se/research/datasets/kinect2-dataset/. 
 
-# Compiling
-    ```
+# Setup
+```
+git clone https://github.com/felja633/kinectv2_decoders.git
+```
+Download dataset at www.cvl.isy.liu.se/research/datasets/kinect2-dataset/dataset.zip.
+Unzip dataset.zip in kinectv2_decoders folder
+
+```
 cd kinectv2_decoders
 mkdir build
 cd build
@@ -12,8 +18,10 @@ cmake ..
 make
 ```
 # Run
-    ```
-cd build
+As of now we have three datasets: library, lecture and kitchen. Choose one dataset and run
+the code as: 
+```
+cd kinectv2_decoders/build
 ./kinectv2_decoders ../parameters/default_parameters.xml dataset
 cd ..
 python evaluate_decoders.py parameters/default_parameters.xml dataset
@@ -26,9 +34,10 @@ Paramters are passed in xml-format. At this stage two pipelines are implemented,
 The user can then add and change the parameters freely.
 
 Example:
+```xml
 <pipeline name="kde" setup_name="base">
     <Parameters>
-    		<kde_sigma_sqr>0.0239282226563</kde_sigma_sqr>
+        <kde_sigma_sqr>0.0239282226563</kde_sigma_sqr>
         <unwrapping_likelihood_scale>2.0</unwrapping_likelihood_scale>
         <phase_confidence_scale>3.0</phase_confidence_scale>
         <kde_neigborhood_size>5</kde_neigborhood_size>
@@ -37,8 +46,8 @@ Example:
         <max_depth>18750.0</max_depth>
     </Parameters>
 </pipeline>
-
-# Dependencies
+```
+### Dependencies
 
 The package requires the hdf5 library to parse Kinect v2 log files.
 
