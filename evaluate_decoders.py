@@ -115,12 +115,9 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
     plt.figure(fig_num)
     plt.ylabel('inlier rate')
     plt.xlabel('outlier rate')
-    #plt.clf()
     line = plt.plot(np.log(outlier_rate),inlier_rate,marker, label=pipelane_name)
     first_legend = plt.legend(loc=4)
-    #red_patch = mpatches.Patch(color='red', label='The red data')
-    #plt.legend(handles=[red_patch])
-    #plt.show()
+
 
 
 def compare_pipelines(xml_filename, dataset):
@@ -164,7 +161,7 @@ def visualize_frame(args):
     plt.title('Depth image with outlier rejection')
     plt.show()
 
-# args: ['vis', 'depth_filename', 'conf_filename', frame_num] or ['test', 'path', 'ground_truth', {'microsoft_filename'}]
+# args: ['vis', 'depth_filename', 'conf_filename', frame_num] or ['test', 'xml_file', 'dataset']
 if __name__ == "__main__":
     args = sys.argv[1:]
 

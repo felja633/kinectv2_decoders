@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <setup name="base">
-  <pipeline name="libfreenect2" setup_name="base">
-      <Parameters>
+    <pipeline name="libfreenect2" setup_name="base">
+        <Parameters>
+            <min_depth>500.0</min_depth>
+            <max_depth>18750.0</max_depth>
+        </Parameters>
+    </pipeline>
+    <pipeline name="kde" setup_name="base">
+        <Parameters>
+		    <kde_sigma_sqr>0.0239282226563</kde_sigma_sqr>
+            <unwrapping_likelihood_scale>2.0</unwrapping_likelihood_scale>
+            <phase_confidence_scale>3.0</phase_confidence_scale>
+            <kde_neigborhood_size>5</kde_neigborhood_size>
+            <num_hyps>2</num_hyps>
+            <min_depth>500.0</min_depth>
+            <max_depth>18750.0</max_depth>
+        </Parameters>
+    </pipeline>
+    <pipeline name="microsoft" setup_name="base">
+        <Parameters>
       
-      </Parameters>
-  </pipeline>
-  <pipeline name="kde" setup_name="base">
-      <Parameters>
-      
-      </Parameters>
-  </pipeline>
-  <pipeline name="microsoft" setup_name="base">
-      <Parameters>
-      
-      </Parameters>
-  </pipeline>
+        </Parameters>
+    </pipeline>
 </setup>
