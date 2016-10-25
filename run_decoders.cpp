@@ -10,7 +10,6 @@
 
 int main(int argc, char** argv)
 {
-    std::cout<<argc<<std::endl;
     if(argc != 4)
     {
         std::cout<<"usage:\n ./kinectv2_decoders /path/to/convig/setup.xml dataset /path/to/dataset/";
@@ -73,7 +72,7 @@ int main(int argc, char** argv)
         }
         std::string depth_filename = "../data/";
 				depth_filename.append(params[i].pipeline);
-        std::string conf_filename = "../data";
+        std::string conf_filename = "../data/";
 				conf_filename.append(params[i].pipeline);
         
         depth_filename.append("_depth_");
