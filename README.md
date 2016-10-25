@@ -18,7 +18,7 @@ cmake ..
 make
 ```
 # Run
-As of now we have three datasets: library, lecture and kitchen. Choose one dataset and run
+We provide three datasets: library, lecture and kitchen. Choose one dataset and run
 the code as: 
 ```
 cd kinectv2_decoders/build
