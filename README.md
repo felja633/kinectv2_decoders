@@ -10,6 +10,8 @@ git clone https://github.com/felja633/kinectv2_decoders.git
 Download dataset at www.cvl.isy.liu.se/research/datasets/kinect2-dataset/dataset.zip.
 Unzip dataset.zip in kinectv2_decoders folder
 
+Build:
+
 ```
 cd kinectv2_decoders
 mkdir build
