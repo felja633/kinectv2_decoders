@@ -1,16 +1,18 @@
 Depth packet processors and plot functions for Kinect v2 phase unwrapping from log files.
-The algorithm is described in the paper "Efficient Phase Unwrapping using Kernel
-Density Estimation", ECCV 2016, Felix Järemo Lawin, Per-Erik Forssén and 
+
+The algorithm is described in the paper *Efficient Phase Unwrapping using Kernel
+Density Estimation*, **ECCV 2016**, Felix Järemo Lawin, Per-Erik Forssén and 
+
 Hannes Ovrén, see http://www.cvl.isy.liu.se/research/datasets/kinect2-dataset/. 
 
 # Setup
 ```
 git clone https://github.com/felja633/kinectv2_decoders.git
 ```
-Download dataset at www.cvl.isy.liu.se/research/datasets/kinect2-dataset/dataset.zip.
-Unzip dataset.zip in kinectv2_decoders folder
+Download dataset at www.cvl.isy.liu.se/research/datasets/kinect2-dataset/kinect2_dataset.zip.
+Unzip `kinect2_dataset.zip` in the kinectv2_decoders folder
 
-Build:
+then build the decoders:
 
 ```
 cd kinectv2_decoders
@@ -22,7 +24,8 @@ make
 
 # Run
 We provide three datasets: **library**, **lecture** and
-**kitchen_*. Choose one as `dataset` and run the code as: 
+
+**kitchen**. Choose one as `dataset` and run the code as: 
 ```
 cd kinectv2_decoders/build
 ./kinectv2_decoders ../parameters/default_parameters.xml dataset
