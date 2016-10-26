@@ -535,18 +535,16 @@ public:
      ******************************************************************************/
     void calculatePhaseUnwrappingVarDirect(float ir0, float ir1, float ir2, float* var0, float* var1, float* var2)
     {
-        //Learning on amplitude gamma0*a+gamma1*a^2+gamma2
-        //gamma_0 = [0.7919451669,-0.002363097609,-3.088285897]; root = 5.244403474
-        //gamma_1 = [1.214266794,-0.00581082634,-3.863119924];   root = 4.084834279
-        //gamma_2 = [0.6101457464,-0.00113679233,-2.84614442];   root = 6.379474529
-
+        //Model: sigma = 1/(gamma0*a+gamma1*a^2+gamma2). The gammas are optimized using lsqnonlin in matlab.
+        //For more details see the paper "Efficient Phase Unwrapping using Kernel Density Estimation"
+        //section 3.3 and 4.4.
         float alpha_max = 0.5f*M_PI;
 
         float q0 = ir0 > 5.244404f ? 0.7919451669f*ir0-0.002363097609f*ir0*ir0-3.088285897f : 1.0f/alpha_max;
         float q1 = ir1 > 4.084835 ? 1.214266794f*ir1-0.00581082634f*ir1*ir1-3.863119924f : 1.0f/alpha_max;
         float q2 = ir2 > 6.379475 ? 0.6101457464f*ir2-0.00113679233f*ir2*ir2-2.84614442f : 1.0f/alpha_max;
 
-      float alpha0 = 1.0f/q0;
+      	float alpha0 = 1.0f/q0;
         alpha0 = alpha0 > alpha_max? alpha_max : alpha0;
         float alpha1 = 1.0f/q1;
         alpha1 = alpha1 > alpha_max ? alpha_max : alpha1;
@@ -560,39 +558,36 @@ public:
         *var0 = alpha0*alpha0;
         *var1 = alpha1*alpha1;
         *var2 = alpha2*alpha2;
-
-
     }
 
 
     /*******************************************************************************
      * Predict phase variance from amplitude quadratic atan model
      ******************************************************************************/
-    void calculatePhaseUnwrappingVar(float ir0, float ir1, float ir2, float* var0, float* var1, float* var2)
+		void calculatePhaseUnwrappingVar(float ir0, float ir1, float ir2, float* var0, float* var1, float* var2)
     {
-        //Learning on amplitude gamma0*a+gamma1*a^2+gamma2
-        // gamma_0 = [0.8211288451,-0.002601348899,-3.549793908]; root = 5.641736705
-        // gamma_1 = [1.259642407,-0.005478390508,-4.335841127];  root = 4.317051817
-        // gamma_2 = [0.6447928035,-0.0009627273649,-3.368205575];root = 6.844535295
+       //Model: sigma = atan(sqrt(1/(gamma0*a+gamma1*a^2+gamma2)-1)). The gammas are optimized using lsqnonlin in matlab. 
+			//For more details see the paper "Efficient Phase Unwrapping using Kernel Density Estimation",
+			//section 3.3 and 4.4.
+			float q0 = 0.8211288451f*ir0-0.002601348899f*ir0*ir0-3.549793908f;
+			float q1 = 1.259642407f*ir1-0.005478390508f*ir1*ir1-4.335841127f;
+			float q2 = 0.6447928035f*ir2-0.0009627273649f*ir2*ir2-3.368205575f;
+			q0*=q0;
+			q1*=q1;
+			q2*=q2;
 
-        float q0 = 0.8211288451f*ir0-0.002601348899f*ir0*ir0-3.549793908f;
-        float q1 = 1.259642407f*ir1-0.005478390508f*ir1*ir1-4.335841127f;
-        float q2 = 0.6447928035f*ir2-0.0009627273649f*ir2*ir2-3.368205575f;
-        q0*=q0;
-        q1*=q1;
-        q2*=q2;
+			float sigma0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir0 > 5.64173671f ? 5.64173671f*0.5f*M_PI/ir0 : 0.5f*M_PI;
+			float sigma1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir1 > 4.31705182f ? 4.31705182f*0.5f*M_PI/ir1 : 0.5f*M_PI;
+			float sigma2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir2 > 6.84453530f ? 6.84453530f*0.5f*M_PI/ir2 : 0.5f*M_PI;
 
-        float alpha0 = q0>1.0f ? atan(sqrt(1.0f/(q0-1.0f))) : ir0 > 5.64173671f/4.0f ? 5.64173671f*0.5f*M_PI/ir0 : 2.0f*M_PI;
-        float alpha1 = q1>1.0f ? atan(sqrt(1.0f/(q1-1.0f))) : ir1 > 4.31705182f/4.0f ?  4.31705182f*0.5f*M_PI/ir1 : 2.0f*M_PI;
-        float alpha2 = q2>1.0f ? atan(sqrt(1.0f/(q2-1.0f))) : ir2 > 6.84453530f/4.0f ? 6.84453530f*0.5f*M_PI/ir2 : 2.0f*M_PI;
+			//Set sigma = 0.001 to the minimum standard deviation of the phase
+			sigma0 = sigma0 < 0.001f ? 0.001f: sigma0;
+			sigma1 = sigma1 < 0.001f ? 0.001f: sigma1;
+			sigma2 = sigma2 < 0.001f ? 0.001f: sigma2;
 
-        alpha0 = alpha0 < 0.001f ? 0.001f: alpha0;
-        alpha1 = alpha1 < 0.001f ? 0.001f: alpha1;
-        alpha2 = alpha2 < 0.001f ? 0.001f: alpha2;
-
-        *var0 = alpha0*alpha0;
-        *var1 = alpha1*alpha1;
-        *var2 = alpha2*alpha2;
+			*var0 = sigma0*sigma0;
+			*var1 = sigma1*sigma1;
+			*var2 = sigma2*sigma2;
 
     }
 
