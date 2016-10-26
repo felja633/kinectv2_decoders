@@ -16,7 +16,6 @@ def load_images_bin( filename ):
     data = np.fromfile(infile, dtype=np.float32)
 
     tot_ims = len(data)/(512*424)
-    #depth_images = np.empty((512, 424, tot_ims)) 
     depth_images = data.reshape(tot_ims,424, 512).transpose()
     return depth_images, tot_ims
 
@@ -27,7 +26,6 @@ def load_gt_bin( filename ):
 
     infile = open(filename, "r")
     data = np.fromfile(infile, dtype=np.float32)
-    #depth_images = np.empty((512, 424, tot_ims)) 
     depth_images = data.reshape(510, 424).transpose()
     return depth_images
 #
@@ -53,15 +51,12 @@ def classify_depth_points(depth_images, ground_truth, inlier_threshold, num_imag
 def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_threshold, num_points, num_images):
 
     sh = max_vals_images.shape
-    #print(sh)
     max_val_im = max_vals_images[:,:,1]
     sorted_max_vals = np.sort(max_val_im.ravel())
     len_max_val = len(sorted_max_vals)
     max_val_thresh = np.append(np.array(-0.0001), sorted_max_vals[::np.floor(len_max_val/num_points)])
-    print(max_val_thresh, np.floor(len_max_val/num_points), len_max_val)
    
     num_thresh = len(max_val_thresh)
-    #print("num_thresh = ", num_thresh)
     mask_inliers, mask_outliers = classify_depth_points(depth, ground_truth, inlier_threshold, num_images)
 
     num_pixels = np.count_nonzero(ground_truth)
@@ -79,8 +74,6 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
 
     inlier_rate = np.mean(num_inliers/num_pixels,axis=0)
     outlier_rate = np.mean(num_outliers/num_pixels,axis=0)
-    #inlier_rate_std = np.std(num_inliers/num_pixels,axis=0)
-    #outlier_rate_std = np.std(num_outliers/num_pixels,axis=0)
     thresholds = max_val_thresh
 
     return inlier_rate, outlier_rate, thresholds
@@ -97,8 +90,8 @@ def parse_setup_xml(filename, dataset):
         
         setup_name = pipeline.attrib['setup_name']
 
-        depth_filename = "data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
-        conf_filename = "data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
+        depth_filename = "dataset/data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
+        conf_filename = "dataset/data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
         if os.path.isfile(depth_filename) & os.path.isfile(depth_filename):
             pipeline_names.append(pipeline_name)
             depth_file_string.append(depth_filename)
@@ -111,7 +104,7 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
     depth_images, num_images = load_images_bin( depth_images_file )
 
     inlier_rate, outlier_rate, thresholds = generate_inlier_outlier_rates(max_val_images, depth_images, ground_truth, inlier_threshold, num_points, num_images)
-    print(inlier_rate,outlier_rate)
+
     plt.figure(fig_num)
     plt.ylabel('inlier rate')
     plt.xlabel('outlier rate')
@@ -135,6 +128,8 @@ def compare_pipelines(xml_filename, dataset):
         i += 1
     
     if len(depth_file_string) > 0:
+        plt.figure(1)
+        plt.title(dataset)
         plt.show()
     else:
         print('no files t be found :(')
@@ -143,7 +138,7 @@ def visualize_frame(args):
     depth_images_file = args[1]
     conf_images_file = args[2]
     frame = args[3]
-    print('filename = ', depth_images_file, ' frame = ', frame)
+
     depth_images, num_images = load_images_bin( depth_images_file )
     conf_images, num_images = load_images_bin( conf_images_file )
     depth = depth_images[:,:,int(frame)].transpose()

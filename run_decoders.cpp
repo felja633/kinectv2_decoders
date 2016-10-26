@@ -45,9 +45,9 @@ int main(int argc, char** argv)
     {
         if(strcmp(params[i].pipeline.c_str(),"libfreenect2") == 0)
         {
-		        std::string depth_filename = "../data/";
+		        std::string depth_filename = "../dataset/data/";
 						depth_filename.append(params[i].pipeline);
-				    std::string conf_filename = "../data/";
+				    std::string conf_filename = "../dataset/data/";
 						conf_filename.append(params[i].pipeline);
         
 				    depth_filename.append("_depth_");
@@ -82,9 +82,9 @@ int main(int argc, char** argv)
             //initialize kde decoder
       
 
-		        std::string depth_filename = "../data/";
+		        std::string depth_filename = "../dataset/data/";
 						depth_filename.append(params[i].pipeline);
-				    std::string conf_filename = "../data/";
+				    std::string conf_filename = "../dataset/data/";
 						conf_filename.append(params[i].pipeline);
         
 				    depth_filename.append("_depth_");
