@@ -109,7 +109,10 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
     plt.ylabel('inlier rate')
     plt.xlabel('outlier rate')
     plt.grid(True)
-    line = plt.plot(np.log(outlier_rate),inlier_rate,marker, label=pipelane_name)
+    #line = plt.plot(np.log(outlier_rate),inlier_rate,marker, label=pipelane_name)
+    line = plt.semilogx(outlier_rate,inlier_rate,marker, label=pipelane_name)
+    plt.xlim(1.0e-7,1.0e-0)
+    plt.ylim(0.0,1.0)
     first_legend = plt.legend(loc=4)
 
 
