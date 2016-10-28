@@ -108,13 +108,14 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
     plt.figure(fig_num)
     plt.ylabel('inlier rate')
     plt.xlabel('outlier rate')
+    plt.grid(True)
     line = plt.plot(np.log(outlier_rate),inlier_rate,marker, label=pipelane_name)
     first_legend = plt.legend(loc=4)
 
 
 
 def compare_pipelines(xml_filename, dataset):
-    gt = load_gt_bin( "data/"+dataset+"_gt.bin" )
+    gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
     marker = '-'
     i = 0
@@ -135,7 +136,7 @@ def compare_pipelines(xml_filename, dataset):
         print('no files t be found :(')
 
 def visualize_frame(xml_filename, dataset, frame_num):
-    gt = load_gt_bin( "data/"+dataset+"_gt.bin" )
+    gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
     frame = args[3]
 
