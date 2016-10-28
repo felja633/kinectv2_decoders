@@ -134,39 +134,48 @@ def compare_pipelines(xml_filename, dataset):
     else:
         print('no files t be found :(')
 
-def visualize_frame(args):
-    depth_images_file = args[1]
-    conf_images_file = args[2]
+def visualize_frame(xml_filename, dataset, frame_num):
+    gt = load_gt_bin( "data/"+dataset+"_gt.bin" )
+    depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
     frame = args[3]
 
-    depth_images, num_images = load_images_bin( depth_images_file )
-    conf_images, num_images = load_images_bin( conf_images_file )
-    depth = depth_images[:,:,int(frame)].transpose()
-    conf = conf_images[:,:,int(frame)].transpose()
-    plt.figure(1)
-    plt.imshow(depth,cmap=pylab.gray())
-    plt.title('Depth image without outlier rejection')
-    plt.figure(2)
-    plt.imshow(conf,cmap=pylab.gray())
-    plt.title('Confidence image')
-    depth_filtered = np.array(depth)
-    depth_filtered[np.where(conf < 0.4)] = 0.0
-    plt.figure(3)
-    plt.imshow(depth_filtered,cmap=pylab.gray())
-    plt.title('Depth image with outlier rejection')
+    i = 0
+    while i < len(depth_file_string):
+        depth_images, num_images = load_images_bin( depth_file_string[i] )
+        conf_images, num_images = load_images_bin( conf_file_string[i] )
+        depth = depth_images[:,:,int(frame)].transpose()
+        conf = conf_images[:,:,int(frame)].transpose()
+        plt.figure(i+1)
+        plt.subplot(2,2,1)
+        plt.imshow(depth,cmap=pylab.gray())
+        plt.title('Depth image without outlier rejection, '+pipeline_names[i])
+        plt.subplot(2,2,2)
+        plt.imshow(conf,cmap=pylab.gray())
+        plt.title('Confidence image, '+pipeline_names[i])
+        depth_filtered = np.array(depth)
+        depth_filtered[np.where(conf < 0.4)] = 0.0
+        plt.subplot(2,2,3)
+        plt.imshow(depth_filtered,cmap=pylab.gray())
+        plt.title('Depth image with outlier rejection, '+pipeline_names[i])
+        plt.subplot(2,2,4)
+        plt.imshow(gt,cmap=pylab.gray())
+        plt.title('Ground truth '+ dataset)
+        i=i+1
+
     plt.show()
+
 
 # args: ['vis', 'depth_filename', 'conf_filename', frame_num] or ['test', 'xml_file', 'dataset']
 if __name__ == "__main__":
     args = sys.argv[1:]
 
     if args[0] == 'vis':
-        if len(args) < 4:
+        if len(args) < 3:
             print('not enough arguments')
             print('len(args) = ', len(args))
             exit()
 
-        visualize_frame(args)
+        visualize_frame(args[1], args[2], args[3])
     elif args[0] == 'test':
         if len(args) < 2:
             print('not enough arguments')
