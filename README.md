@@ -23,14 +23,12 @@ make
 ```
 
 # Run
-We provide three datasets: **library**, **lecture** and
-
-**kitchen**. Choose one as `dataset` and run the code as: 
+We provide three datasets: **lecture**, **kitchen**, and **library**. Choose one as `dataset` and run the code as: 
 ```
 cd kinectv2_decoders/build
 ./kinectv2_decoders ../parameters/default_setup.xml dataset
 cd ..
-python evaluate_decoders.py parameters/default_setup.xml dataset
+python evaluate_decoders.py test parameters/default_setup.xml dataset
 ```
 
 # Parameters
