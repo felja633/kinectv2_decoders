@@ -28,9 +28,9 @@ We provide three datasets: **library**, **lecture** and
 **kitchen**. Choose one as `dataset` and run the code as: 
 ```
 cd kinectv2_decoders/build
-./kinectv2_decoders ../parameters/default_parameters.xml dataset
+./kinectv2_decoders ../parameters/default_setup.xml dataset
 cd ..
-python evaluate_decoders.py parameters/default_parameters.xml dataset
+python evaluate_decoders.py parameters/default_setup.xml dataset
 ```
 
 # Parameters
@@ -58,7 +58,7 @@ The package requires the **hdf5 library** to parse Kinect v2 log files.
 
 ## MacOS X
 
-First Install HDF5 with brew install:
+First Install HDF5 with brew:
 ~~~~
 brew install homebrew/science/hdf5
 ~~~~

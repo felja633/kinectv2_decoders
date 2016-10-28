@@ -19,7 +19,7 @@ int main(int argc, char** argv)
     std::string setup_xmlfile = argv[1];
     std::string data_set = argv[2];
 
-    std::string data_file_name = "../logs/";
+    std::string data_file_name = "../dataset/logs/";
     data_file_name.append(data_set);
     data_file_name.append(".h5");
 
