@@ -125,7 +125,7 @@ def parse_setup_xml(filename, dataset):
 
         depth_filename = "dataset/data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
         conf_filename = "dataset/data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
-        if os.path.isfile(depth_filename) & os.path.isfile(depth_filename):
+        if os.path.isfile(depth_filename) & os.path.isfile(conf_filename):
             pipeline_names.append(pipeline_name)
             depth_file_string.append(depth_filename)
             conf_file_string.append(conf_filename)
@@ -150,6 +150,11 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
 
 
 def compare_pipelines(xml_filename, dataset):
+    gt_file = "dataset/data/"+dataset+"_gt.bin"
+    if os.path.isfile(gt_file) == False:
+        print("Ground truth file"+gt_file+" not found")
+        exit()
+
     gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
     marker = '-'
@@ -171,12 +176,18 @@ def compare_pipelines(xml_filename, dataset):
         print('no files t be found :(')
 
 def visualize_frame(xml_filename, dataset, frame_num):
-    gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
     if frame_num > len(depth_file_string):
         global frame_num_global
         frame_num_global = frame_num_global - 1
         return
+
+    gt_file = "dataset/data/"+dataset+"_gt.bin"
+    if os.path.isfile(gt_file) == False:
+        print("Ground truth file"+gt_file+" not found")
+        gt = np.zeros((424, 510))
+    else:
+        gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
 
     kde_threshold = 0.4
     i = 0

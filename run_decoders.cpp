@@ -12,9 +12,11 @@ int main(int argc, char** argv)
 {
     if(argc != 3)
     {
-        std::cout<<"usage:\n ./kinectv2_decoders /path/to/convig/setup.xml dataset";
+        std::cout<<"usage:\n ./kinectv2_decoders /path/to/config/setup.xml dataset";
         return 0;
     }
+
+    std::cout<<"Processing depth data...";
 
     std::string setup_xmlfile = argv[1];
     std::string data_set = argv[2];
@@ -124,7 +126,7 @@ int main(int argc, char** argv)
     //decode and save frames to file
     int frame_num;
     int frame_num_offset = 0;
-    int num_frames = 10;
+    int num_frames = 25;
     for(frame_num = frame_num_offset; frame_num < num_frames+frame_num_offset; frame_num++)
     {
         std::cout<<"Frame: "<<frame_num<<std::endl;
