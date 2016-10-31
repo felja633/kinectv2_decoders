@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 import os.path
 
+
+frame_num_global = 0 
 #
 # loads float array images (424x512xtot_ims) from binary file
 #
@@ -28,22 +30,53 @@ def load_gt_bin( filename ):
     data = np.fromfile(infile, dtype=np.float32)
     depth_images = data.reshape(510, 424).transpose()
     return depth_images
+
+def color_overlay(imgr, immask, cvec):
+    im = np.tile(imgr[..., None], (1,1,3))
+    im[immask,0]= cvec[0]
+    im[immask,1]= cvec[1]
+    im[immask,2]= cvec[2]
+    return im
+
 #
 # sets image points to inlier or outlier
 #
 def classify_depth_points(depth_images, ground_truth, inlier_threshold, num_images):
 
     sh = depth_images[1:511,:,:].shape
-    
     mask_inliers = np.zeros(sh,dtype=bool) 
     mask_outliers = np.zeros(sh,dtype=bool) 
-    #print("sh = ", sh)
     for i in range(0,num_images):
         
         mask_inliers[:,:,i] = (np.abs(ground_truth.transpose() - depth_images[1:511,:,i]) < inlier_threshold) & (ground_truth.transpose() > 0.0)
         mask_outliers[:,:,i] = (mask_inliers[:,:,i] != True) & (ground_truth.transpose() > 0.0) & (depth_images[1:511,:,i]>0.0)
 
     return mask_inliers, mask_outliers
+
+#
+# key event handler
+#
+def press(event):
+    global frame_num_global
+
+    sys.stdout.flush()
+
+    if args[0] == 'vis':
+        if len(args) < 2:
+            print('not enough arguments')
+            print('len(args) = ', len(args))
+            exit()
+        if event.key == 27:
+            exit()
+        elif event.key == 'left':
+            if frame_num_global == 0:
+                return
+            else:
+                frame_num_global = frame_num_global - 1
+                visualize_frame(args[1], args[2], frame_num_global)
+        elif event.key == 'right':
+            frame_num_global = frame_num_global + 1
+            visualize_frame(args[1], args[2], frame_num_global)
 
 #
 # calculates inlier/outlier rates
@@ -109,8 +142,7 @@ def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, nu
     plt.ylabel('inlier rate')
     plt.xlabel('outlier rate')
     plt.grid(True)
-    #line = plt.plot(np.log(outlier_rate),inlier_rate,marker, label=pipelane_name)
-    line = plt.semilogx(outlier_rate,inlier_rate,marker, label=pipelane_name)
+    plt.semilogx(outlier_rate,inlier_rate,marker, label=pipelane_name)
     plt.xlim(1.0e-7,1.0e-0)
     plt.ylim(0.0,1.0)
     first_legend = plt.legend(loc=4)
@@ -141,15 +173,19 @@ def compare_pipelines(xml_filename, dataset):
 def visualize_frame(xml_filename, dataset, frame_num):
     gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
-    frame = args[3]
+    if frame_num > len(depth_file_string):
+        global frame_num_global
+        frame_num_global = frame_num_global - 1
+        return
 
+    kde_threshold = 0.4
     i = 0
     while i < len(depth_file_string):
         depth_images, num_images = load_images_bin( depth_file_string[i] )
         conf_images, num_images = load_images_bin( conf_file_string[i] )
-        depth = depth_images[:,:,int(frame)].transpose()
-        conf = conf_images[:,:,int(frame)].transpose()
-        plt.figure(i+1)
+        depth = depth_images[:,:,int(frame_num)].transpose()
+        conf = conf_images[:,:,int(frame_num)].transpose()
+        fig = plt.figure(i+1)
         plt.subplot(2,2,1)
         plt.imshow(depth,cmap=pylab.gray())
         plt.title('Depth image without outlier rejection, '+pipeline_names[i])
@@ -157,29 +193,30 @@ def visualize_frame(xml_filename, dataset, frame_num):
         plt.imshow(conf,cmap=pylab.gray())
         plt.title('Confidence image, '+pipeline_names[i])
         depth_filtered = np.array(depth)
-        depth_filtered[np.where(conf < 0.4)] = 0.0
+        depth_filtered = color_overlay(depth_filtered/18750.0, conf < kde_threshold, np.array([0, 1, 0]))
         plt.subplot(2,2,3)
         plt.imshow(depth_filtered,cmap=pylab.gray())
         plt.title('Depth image with outlier rejection, '+pipeline_names[i])
         plt.subplot(2,2,4)
         plt.imshow(gt,cmap=pylab.gray())
         plt.title('Ground truth '+ dataset)
+        fig.canvas.mpl_connect('key_press_event', press)
         i=i+1
 
     plt.show()
 
 
-# args: ['vis', 'depth_filename', 'conf_filename', frame_num] or ['test', 'xml_file', 'dataset']
+# args: ['vis', 'depth_filename', 'conf_filename'] or ['test', 'xml_file', 'dataset']
 if __name__ == "__main__":
     args = sys.argv[1:]
 
     if args[0] == 'vis':
-        if len(args) < 3:
+        if len(args) < 2:
             print('not enough arguments')
             print('len(args) = ', len(args))
             exit()
 
-        visualize_frame(args[1], args[2], args[3])
+        visualize_frame(args[1], args[2], frame_num_global)
     elif args[0] == 'test':
         if len(args) < 2:
             print('not enough arguments')

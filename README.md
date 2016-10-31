@@ -31,10 +31,12 @@ cd ..
 python evaluate_decoders.py test parameters/default_setup.xml dataset
 ```
 
-To visualize frames, run code as:
+To visualize, run code as:
 ```
-python evaluate_decoders.py vis ../parameters/default_setup.xml dataset frame_num
+python evaluate_decoders.py vis ../parameters/default_setup.xml dataset
 ```
+Toggle between frames using the arrow buttons.
+
 # Parameters
 Parameters are passed in xml-format. At this stage two pipelines are implemented, 
 **kde** and **libfreenect2**. Each pipeline that is to be tested should be added in the xml-file.
