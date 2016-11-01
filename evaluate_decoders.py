@@ -69,11 +69,12 @@ def press(event):
         if event.key == 27:
             exit()
         elif event.key == 'left':
-            if frame_num_global == 0:
-                return
-            else:
+            if frame_num_global > 0:
                 frame_num_global = frame_num_global - 1
                 visualize_frame(args[1], args[2], frame_num_global)
+            else:
+                return
+
         elif event.key == 'right':
             frame_num_global = frame_num_global + 1
             visualize_frame(args[1], args[2], frame_num_global)
@@ -157,6 +158,11 @@ def compare_pipelines(xml_filename, dataset):
 
     gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
+
+    if len(depth_file_string) == 0:
+        print('\nrun decoders before evaluation:\ncd kinectv2_decoders/build\n./kinectv2_decoders ../parameters/default_setup.xml dataset\n')
+        exit()
+
     marker = '-'
     i = 0
     while i < len(depth_file_string):
@@ -177,6 +183,11 @@ def compare_pipelines(xml_filename, dataset):
 
 def visualize_frame(xml_filename, dataset, frame_num):
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
+ 
+    if len(depth_file_string) == 0:
+        print('\nrun decoders before evaluation:\ncd kinectv2_decoders/build\n./kinectv2_decoders ../parameters/default_setup.xml dataset\n')
+        exit()
+
     if frame_num > len(depth_file_string):
         global frame_num_global
         frame_num_global = frame_num_global - 1
@@ -220,20 +231,22 @@ def visualize_frame(xml_filename, dataset, frame_num):
 # args: ['vis', 'depth_filename', 'conf_filename'] or ['test', 'xml_file', 'dataset']
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if len(args) > 0:
+        if args[0] == 'vis':
+            if len(args) < 2:
+                print('not enough arguments')
+                print('len(args) = ', len(args))
+                exit()
 
-    if args[0] == 'vis':
-        if len(args) < 2:
-            print('not enough arguments')
-            print('len(args) = ', len(args))
-            exit()
+            visualize_frame(args[1], args[2], frame_num_global)
+        elif args[0] == 'test':
+            if len(args) < 2:
+                print('not enough arguments')
+                print('len(args) = ', len(args))
+                exit()
 
-        visualize_frame(args[1], args[2], frame_num_global)
-    elif args[0] == 'test':
-        if len(args) < 2:
-            print('not enough arguments')
-            print('len(args) = ', len(args))
-            exit()
-
-        compare_pipelines(args[1], args[2])
+            compare_pipelines(args[1], args[2])
+        else:
+            print('For visualization: python evaluate_decoders.py vis parameters/default_setup.xml dataset\nFor evaluation: python test parameters/default_setup.xml dataset')
     else:
-        print('not implemented')
+        print('For visualization: python evaluate_decoders.py vis parameters/default_setup.xml dataset\nFor evaluation: python test parameters/default_setup.xml dataset')
