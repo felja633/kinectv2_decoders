@@ -82,8 +82,6 @@ int main(int argc, char** argv)
         else if(strcmp(params[i].pipeline.c_str(),"kde") == 0)
         {
             //initialize kde decoder
-      
-
 		        std::string depth_filename = "../dataset/data/";
 						depth_filename.append(params[i].pipeline);
 				    std::string conf_filename = "../dataset/data/";
@@ -109,7 +107,7 @@ int main(int argc, char** argv)
 						  conf_files.push_back(conf_file);
 
 				      CpuKdeDepthPacketProcessor* kde = new CpuKdeDepthPacketProcessor();
-		          kde->initParameters(params[1]);
+		          kde->initParameters(params[i]);
 		          kde->loadP0TablesFromCommandResponse(p0_table, len_p0_table);
 		          kde->loadXZTables(&dev.xtable[0], &dev.ztable[0]);
 		          kde->loadLookupTable(&dev.lut[0]);

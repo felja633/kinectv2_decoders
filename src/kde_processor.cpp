@@ -33,7 +33,10 @@
 #include <algorithm>
 #include "processors.h"
 #include "libfreenect2_data_structures.h"
-#include <limits>
+#include <stdio.h>
+#include <cstdlib>
+#include <string>
+#include <cstring>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -620,7 +623,13 @@ public:
 	{
 		//calculate phase likelihood from amplitude
 		float var0,var1,var2;
-		calculatePhaseUnwrappingVar(m0[1], m1[1], m2[1], &var0, &var1, &var2);
+		if(strcmp(params.phase_noise_prediction_method.c_str(),"arctan quadratic") == 0)
+        calculatePhaseUnwrappingVar(m0[1], m1[1], m2[1], &var0, &var1, &var2);
+    else if(strcmp(params.phase_noise_prediction_method.c_str(),"direct quadratic") == 0)
+        calculatePhaseUnwrappingVarDirect(m0[1], m1[1], m2[1], &var0, &var1, &var2);
+    else
+        calculatePhaseUnwrappingVar(m0[1], m1[1], m2[1], &var0, &var1, &var2); //use default
+    
 		phase_likelihood = exp(-(var0+var1+var2)/(2.0f*params.phase_confidence_scale));
 		phase_likelihood = isnan(phase_likelihood) ? 0.0f: phase_likelihood;
 	}

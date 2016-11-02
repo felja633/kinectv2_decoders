@@ -123,9 +123,11 @@ def parse_setup_xml(filename, dataset):
         pipeline_name = pipeline.attrib['name']
         
         setup_name = pipeline.attrib['setup_name']
-
+        
         depth_filename = "dataset/data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
+        #print(depth_filename)
         conf_filename = "dataset/data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
+        pipeline_name = pipeline_name+" "+setup_name
         if os.path.isfile(depth_filename) & os.path.isfile(conf_filename):
             pipeline_names.append(pipeline_name)
             depth_file_string.append(depth_filename)
@@ -134,6 +136,7 @@ def parse_setup_xml(filename, dataset):
     return depth_file_string, conf_file_string, pipeline_names
 
 def run_test(ground_truth, max_val_file, depth_images_file, inlier_threshold, num_points, fig_num, pipelane_name, marker):
+    print(depth_images_file)
     max_val_images, num_images = load_images_bin( max_val_file )
     depth_images, num_images = load_images_bin( depth_images_file )
 
@@ -167,7 +170,7 @@ def compare_pipelines(xml_filename, dataset):
     i = 0
     while i < len(depth_file_string):
         num_points = 1
-        if pipeline_names[i] == 'kde':
+        if 'kde' in pipeline_names[i]:
             num_points = 20
         elif pipeline_names[i] == 'microsoft':
             marker = 'k*'

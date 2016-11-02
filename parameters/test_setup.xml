@@ -10,6 +10,26 @@
         <num_hyps>3</num_hyps>
       </Parameters>
   </pipeline>
+	<pipeline name="kde" setup_name="base">
+      <Parameters>
+        <num_hyps>2</num_hyps>
+      </Parameters>
+  </pipeline>
+	<pipeline name="kde" setup_name="r4">
+      <Parameters>
+        <kde_neigborhood_size>4</kde_neigborhood_size>
+      </Parameters>
+  </pipeline>
+	<pipeline name="kde" setup_name="r1">
+      <Parameters>
+        <kde_neigborhood_size>1</kde_neigborhood_size>
+      </Parameters>
+  </pipeline>
+	<pipeline name="kde" setup_name="direct quadratic">
+      <Parameters>
+        <phase_noise_prediction_method>direct quadratic</phase_noise_prediction_method>
+      </Parameters>
+  </pipeline>
   <pipeline name="microsoft" setup_name="base">
       <Parameters>
       

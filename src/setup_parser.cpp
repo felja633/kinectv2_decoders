@@ -141,7 +141,9 @@ void SetupParser::insertParameterValue(Parameters &params, rapidxml::xml_node<>*
         params.min_depth = std::atof(node->value());
     else if(strcmp(node->name(),"max_depth") == 0)
         params.max_depth = std::atof(node->value());
-    else
+    else if(strcmp(node->name(),"phase_noise_prediction_method") == 0)
+        params.phase_noise_prediction_method = node->value();
+		else 
         std::cout<<"parameter "<<node->name()<<" not defined or changeable\n";
      
    

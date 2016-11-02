@@ -267,15 +267,17 @@ struct Parameters
     float edge_avg_delta_threshold;
     float max_edge_count;
 
-	float kde_sigma_sqr;
-	float unwrapping_likelihood_scale;
-	float phase_confidence_scale;
-	float kde_threshold;
-	size_t kde_neigborhood_size;
-	size_t num_hyps;
+    float kde_sigma_sqr;
+    float unwrapping_likelihood_scale;
+    float phase_confidence_scale;
+    float kde_threshold;  
+    size_t kde_neigborhood_size;
+    size_t num_hyps;
 
     float min_depth;
     float max_depth;
+
+    std::string phase_noise_prediction_method;
 
   Parameters()
   {
@@ -332,15 +334,17 @@ struct Parameters
 			* Hannes Ovren, see http://www.cvl.isy.liu.se/research/datasets/kinect2-dataset/.
 			*/
 
-			kde_sigma_sqr = 0.0239282226563f; //the scale of the kernel in the KDE, h in eq (13).
-			unwrapping_likelihood_scale = 2.0f; //scale parameter for the unwrapping likelihood, s_1^2 in eq (15).
-			phase_confidence_scale = 3.0f; //scale parameter for the phase likelihood, s_2^2 in eq (23)
-			kde_threshold = 0.5f; //threshold on the KDE output in eq (25), defines the inlier/outlier rate trade-off
-			kde_neigborhood_size = 5; //spatial support of the KDE, defines a filter size of (2*kde_neigborhood_size+1 x 2*kde_neigborhood_size+1)
-			num_hyps = 2; //number of phase unwrapping hypothesis considered by the KDE in each pixel
+      kde_sigma_sqr = 0.0239282226563f; //the scale of the kernel in the KDE, h in eq (13).
+      unwrapping_likelihood_scale = 2.0f; //scale parameter for the unwrapping likelihood, s_1^2 in eq (15).
+      phase_confidence_scale = 3.0f; //scale parameter for the phase likelihood, s_2^2 in eq (23)
+      kde_threshold = 0.5f; //threshold on the KDE output in eq (25), defines the inlier/outlier rate trade-off
+      kde_neigborhood_size = 5; //spatial support of the KDE, defines a filter size of (2*kde_neigborhood_size+1 x 2*kde_neigborhood_size+1)
+      num_hyps = 2; //number of phase unwrapping hypothesis considered by the KDE in each pixel
 
       min_depth = 500.0f;
       max_depth = 18750.0f;
+
+      phase_noise_prediction_method = "arctan quadratic";
   }
 };
 
