@@ -77,7 +77,3 @@ export DYLD_LIBRARY_PATH=${HDF5}/lib:${DYLD_LIBRARY_PATH}
 ~~~~
 sudo apt-get install libhdf5-dev
 ~~~~
-
-# Feedback
-
-For feedback contact Felix Järemo-Lawin <felix.jaremo-lawin@liu.se>

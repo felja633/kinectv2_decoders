@@ -168,11 +168,12 @@ def compare_pipelines(xml_filename, dataset):
 
     marker = '-'
     i = 0
+    print('Evaluating depth... ')
     while i < len(depth_file_string):
         num_points = 1
         if 'kde' in pipeline_names[i]:
             num_points = 20
-        elif pipeline_names[i] == 'microsoft':
+        elif 'microsoft' in pipeline_names[i]:
             marker = 'k*'
         run_test(gt, conf_file_string[i], depth_file_string[i], 300, num_points, 1,pipeline_names[i], marker)
         i += 1
