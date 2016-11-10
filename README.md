@@ -1,9 +1,7 @@
 Depth packet processors and plot functions for Kinect v2 phase unwrapping from log files.
 
 The algorithm is described in the paper *Efficient Phase Unwrapping using Kernel
-Density Estimation*, **ECCV 2016**, Felix Järemo Lawin, Per-Erik Forssén and 
-
-Hannes Ovrén, see http://www.cvl.isy.liu.se/research/datasets/kinect2-dataset/. 
+Density Estimation*, **ECCV 2016**, Felix Järemo Lawin, Per-Erik Forssén and Hannes Ovrén, see http://www.cvl.isy.liu.se/research/datasets/kinect2-dataset/. 
 
 # Setup
 ```
