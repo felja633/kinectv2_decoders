@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib import figure
 import sys
 import pylab
 import xml.etree.ElementTree as ET
@@ -20,6 +21,22 @@ def load_images_bin( filename ):
     tot_ims = len(data)/(512*424)
     depth_images = data.reshape(tot_ims,424, 512).transpose()
     return depth_images, tot_ims
+
+def load_image_bin( filename, frame_num ):
+
+    infile = open(filename, "r")
+    data = np.fromfile(infile, dtype=np.float32)
+
+    tot_ims = len(data)/(512*424)
+    depth_images = data.reshape(tot_ims,424, 512).transpose()
+    if frame_num >= tot_ims:
+        global frame_num_global
+        frame_num_global = frame_num_global - 1
+        frame_num = frame_num_global
+        return
+
+    image = depth_images[:,:,frame_num].transpose() 
+    return image
 
 #
 # loads float array images (424x510) from binary file
@@ -47,8 +64,9 @@ def classify_depth_points(depth_images, ground_truth, inlier_threshold, num_imag
     mask_inliers = np.zeros(sh,dtype=bool) 
     mask_outliers = np.zeros(sh,dtype=bool) 
     for i in range(0,num_images):
-        
+        #inliers are points within the threshold
         mask_inliers[:,:,i] = (np.abs(ground_truth.transpose() - depth_images[1:511,:,i]) < inlier_threshold) & (ground_truth.transpose() > 0.0)
+        #outliers are points ouside the threshold and not rejected by outlier rejection
         mask_outliers[:,:,i] = (mask_inliers[:,:,i] != True) & (ground_truth.transpose() > 0.0) & (depth_images[1:511,:,i]>0.0)
 
     return mask_inliers, mask_outliers
@@ -71,14 +89,18 @@ def press(event):
         elif event.key == 'left':
             if frame_num_global > 0:
                 frame_num_global = frame_num_global - 1
+                plt.clf()
                 visualize_frame(args[1], args[2], frame_num_global)
+                plt.show()
             else:
                 return
 
         elif event.key == 'right':
             frame_num_global = frame_num_global + 1
-            visualize_frame(args[1], args[2], frame_num_global)
 
+            plt.clf() 
+            visualize_frame(args[1], args[2], frame_num_global)
+            plt.show()
 #
 # calculates inlier/outlier rates
 #
@@ -88,6 +110,8 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
     max_val_im = max_vals_images[:,:,1]
     sorted_max_vals = np.sort(max_val_im.ravel())
     len_max_val = len(sorted_max_vals)
+
+    #generate thesholds
     max_val_thresh = np.append(np.array(-0.0001), sorted_max_vals[::np.floor(len_max_val/num_points)])
    
     num_thresh = len(max_val_thresh)
@@ -97,6 +121,7 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
     num_inliers = np.zeros((num_images,num_thresh))
     num_outliers = np.zeros((num_images,num_thresh))
 
+    #generate inlier/outlier curves for the thresholds
     for t in range(0,num_thresh):
         for i in range(0,num_images):
             mask = max_vals_images[1:511,:,i] > max_val_thresh[t]
@@ -106,6 +131,7 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
             num_outliers[i,t] = np.count_nonzero(outliers.ravel())
             
 
+    #calculates mean rates over all frames
     inlier_rate = np.mean(num_inliers/num_pixels,axis=0)
     outlier_rate = np.mean(num_outliers/num_pixels,axis=0)
     thresholds = max_val_thresh
@@ -125,7 +151,7 @@ def parse_setup_xml(filename, dataset):
         setup_name = pipeline.attrib['setup_name']
         
         depth_filename = "dataset/data/"+pipeline_name+"_depth_"+setup_name+"_"+dataset+".bin"
-        #print(depth_filename)
+
         conf_filename = "dataset/data/"+pipeline_name+"_conf_"+setup_name+"_"+dataset+".bin"
         pipeline_name = pipeline_name+" "+setup_name
         if os.path.isfile(depth_filename) & os.path.isfile(conf_filename):
@@ -187,15 +213,10 @@ def compare_pipelines(xml_filename, dataset):
 
 def visualize_frame(xml_filename, dataset, frame_num):
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
- 
+  
     if len(depth_file_string) == 0:
         print('\nrun decoders before evaluation:\ncd kinectv2_decoders/build\n./kinectv2_decoders ../parameters/default_setup.xml dataset\n')
         exit()
-
-    if frame_num > len(depth_file_string):
-        global frame_num_global
-        frame_num_global = frame_num_global - 1
-        return
 
     gt_file = "dataset/data/"+dataset+"_gt.bin"
     if os.path.isfile(gt_file) == False:
@@ -204,13 +225,13 @@ def visualize_frame(xml_filename, dataset, frame_num):
     else:
         gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
 
+    print("show frame "+str(frame_num))
     kde_threshold = 0.4
     i = 0
+    plt.hold(False)
     while i < len(depth_file_string):
-        depth_images, num_images = load_images_bin( depth_file_string[i] )
-        conf_images, num_images = load_images_bin( conf_file_string[i] )
-        depth = depth_images[:,:,int(frame_num)].transpose()
-        conf = conf_images[:,:,int(frame_num)].transpose()
+        depth = load_image_bin( depth_file_string[i], frame_num )
+        conf = load_image_bin( conf_file_string[i], frame_num )
         fig = plt.figure(i+1)
         plt.subplot(2,2,1)
         plt.imshow(depth,cmap=pylab.gray())
@@ -227,9 +248,9 @@ def visualize_frame(xml_filename, dataset, frame_num):
         plt.imshow(gt,cmap=pylab.gray())
         plt.title('Ground truth '+ dataset)
         fig.canvas.mpl_connect('key_press_event', press)
+        
         i=i+1
 
-    plt.show()
 
 
 # args: ['vis', 'depth_filename', 'conf_filename'] or ['test', 'xml_file', 'dataset']
@@ -243,6 +264,7 @@ if __name__ == "__main__":
                 exit()
 
             visualize_frame(args[1], args[2], frame_num_global)
+            plt.show()
         elif args[0] == 'test':
             if len(args) < 2:
                 print('not enough arguments')
