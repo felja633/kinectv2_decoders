@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib import figure
 import sys
@@ -9,7 +8,7 @@ from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 import os.path
 
 
-frame_num_global = 0 
+frame_num_global = 0
 #
 # loads float array images (424x512xtot_ims) from binary file
 #
@@ -33,7 +32,6 @@ def load_image_bin( filename, frame_num ):
         global frame_num_global
         frame_num_global = frame_num_global - 1
         frame_num = frame_num_global
-        return
 
     image = depth_images[:,:,frame_num].transpose() 
     return image
@@ -78,20 +76,21 @@ def press(event):
     global frame_num_global
 
     sys.stdout.flush()
-
+    
     if args[0] == 'vis':
         if len(args) < 2:
             print('not enough arguments')
             print('len(args) = ', len(args))
             exit()
-        if event.key == 27:
+        if event.key == 'escape':
+            print('exit')
             exit()
         elif event.key == 'left':
             if frame_num_global > 0:
                 frame_num_global = frame_num_global - 1
                 plt.clf()
-                visualize_frame(args[1], args[2], frame_num_global)
-                plt.show()
+                visualize_frame(args[1], args[2])
+                plt.show(False)
             else:
                 return
 
@@ -99,8 +98,8 @@ def press(event):
             frame_num_global = frame_num_global + 1
 
             plt.clf() 
-            visualize_frame(args[1], args[2], frame_num_global)
-            plt.show()
+            visualize_frame(args[1], args[2])
+            plt.show(False)
 #
 # calculates inlier/outlier rates
 #
@@ -211,7 +210,7 @@ def compare_pipelines(xml_filename, dataset):
     else:
         print('no files t be found :(')
 
-def visualize_frame(xml_filename, dataset, frame_num):
+def visualize_frame(xml_filename, dataset):
     depth_file_string, conf_file_string, pipeline_names = parse_setup_xml(xml_filename, dataset)
   
     if len(depth_file_string) == 0:
@@ -225,13 +224,14 @@ def visualize_frame(xml_filename, dataset, frame_num):
     else:
         gt = load_gt_bin( "dataset/data/"+dataset+"_gt.bin" )
 
-    print("show frame "+str(frame_num))
+    #frame_num = frame_num_global
+    
     kde_threshold = 0.4
     i = 0
     plt.hold(False)
     while i < len(depth_file_string):
-        depth = load_image_bin( depth_file_string[i], frame_num )
-        conf = load_image_bin( conf_file_string[i], frame_num )
+        depth = load_image_bin( depth_file_string[i], frame_num_global )
+        conf = load_image_bin( conf_file_string[i], frame_num_global )
         fig = plt.figure(i+1)
         plt.subplot(2,2,1)
         plt.imshow(depth,cmap=pylab.gray())
@@ -251,9 +251,10 @@ def visualize_frame(xml_filename, dataset, frame_num):
         
         i=i+1
 
+    print("show frame "+str(frame_num_global))
 
 
-# args: ['vis', 'depth_filename', 'conf_filename'] or ['test', 'xml_file', 'dataset']
+# args: ['vis', 'xml_file', 'dataset'] or ['test', 'xml_file', 'dataset']
 if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) > 0:
@@ -263,14 +264,15 @@ if __name__ == "__main__":
                 print('len(args) = ', len(args))
                 exit()
 
-            visualize_frame(args[1], args[2], frame_num_global)
+            print("Toggle between frames using the arrow buttons. Right arrow to increase frame number and left arrow to decrease frame number.\nExit using escape button.")
+            visualize_frame(args[1], args[2])
             plt.show()
         elif args[0] == 'test':
             if len(args) < 2:
                 print('not enough arguments')
                 print('len(args) = ', len(args))
                 exit()
-
+            
             compare_pipelines(args[1], args[2])
         else:
             print('For visualization: python evaluate_decoders.py vis parameters/default_setup.xml dataset\nFor evaluation: python test parameters/default_setup.xml dataset')
