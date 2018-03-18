@@ -111,7 +111,7 @@ def generate_inlier_outlier_rates( max_vals_images, depth, ground_truth, inlier_
     len_max_val = len(sorted_max_vals)
 
     #generate thesholds
-    max_val_thresh = np.append(np.array(-0.0001), sorted_max_vals[::np.floor(len_max_val/num_points)])
+    max_val_thresh = np.append(np.array(-0.0001), sorted_max_vals[::np.int(np.floor(len_max_val/num_points))])
    
     num_thresh = len(max_val_thresh)
     mask_inliers, mask_outliers = classify_depth_points(depth, ground_truth, inlier_threshold, num_images)
