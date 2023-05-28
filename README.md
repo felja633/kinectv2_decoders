@@ -7,7 +7,7 @@ Density Estimation*, **ECCV 2016**, Felix Järemo Lawin, Per-Erik Forssén and H
 ```
 git clone https://github.com/felja633/kinectv2_decoders.git
 ```
-Download dataset at www.cvl.isy.liu.se/research/datasets/kinect2-dataset/kinect2_dataset.zip.
+Download dataset from this [link](https://drive.google.com/file/d/1Jx_hAFySJvfQEWI6PJGpOPVrjKzxg6hK/view?usp=share_link).
 Unzip `kinect2_dataset.zip` in the kinectv2_decoders folder
 
 then build the decoders:
